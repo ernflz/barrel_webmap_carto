@@ -22,6 +22,7 @@ var path = d3.geoPath().projection(projection);
 // --- 3. GLOBAL VARIABLES ---
 // We removed the fake data. This array will be filled by the CSV file.
 var GLOBAL_SHIPPING_DATA = [];
+var LAND_CHECKER = null;
 
 // --- 4. ANIMATION HELPERS ---
 function updateRoutes(dataToShow) {
@@ -76,18 +77,21 @@ function updateRoutes(dataToShow) {
 function rotateTo(centroid, scale) {
     var rotate = projection.rotate();
     var currentScale = projection.scale();
+
+    // In D3, rotation is [-Long, -Lat]
     var targetRotate = [-centroid[0], -centroid[1]];
     
+    // Create a transition for the projection math
     d3.transition()
-        .duration(1500)
+        .duration(1500) // 1.5 Seconds animation
         .tween("rotate", function() {
             var r = d3.interpolate(rotate, targetRotate);
             var s = d3.interpolate(currentScale, scale);
             return function(t) {
                 projection.rotate(r(t));
                 projection.scale(s(t));
-                path = d3.geoPath().projection(projection);
-                svg.selectAll("path").attr("d", path);
+                path = d3.geoPath().projection(projection); // Recalculate Path
+                svg.selectAll("path").attr("d", path);      // Redraw everything
             };
         });
 }
@@ -99,25 +103,36 @@ Promise.all([
     d3.json("dbs/ne_10m_lakes.json"),
     d3.json("dbs/ne_10m_coastline.json"),
     // ⬇ CRITICAL: dsv(";") tells D3 to read Semicolons!
-    d3.dsv(";", "dbs/trade_data.csv") 
+    d3.dsv(";", "dbs/trade_data.csv"),
+    d3.dsv(";", "dbs/ports.csv")
 ]).then(function(files) {
 
     var countries = files[0];
+    function isLand(coords, countriesGeoJSON) {
+    return false;
+}
     var rivers = files[1];
     var lakes = files[2];
     var coastlines = files[3];
-    var tradeData = files[4]; // Your new CSV data
+    var tradeData = files[4];
+    var portData = files[5] // Your new CSV data
 
     // --- STEP A: MAP ISO CODES TO COORDINATES ---
     var countryCoords = {};
     
+
     // Loop through the map features to find the center of every country
+    portData.forEach(function(row) {
+        var lon = parseFloat(row.Longitude);
+        var lat = parseFloat(row.Latitude);
+        countryCoords[row.ISO_Code] = [lon, lat];
+});
+    var centroidCoords = {};
     countries.features.forEach(function(f) {
-        if(f.properties && f.properties.ADM0_A3 && f.geometry) {
-            // "ADM0_A3" is the code like "USA", "IRL", "ESP"
-            countryCoords[f.properties.ADM0_A3] = d3.geoCentroid(f);
-        }
-        
+      if(f.properties && f.properties.ADM0_A3 && f.geometry) {
+        // We still use the GeoJSON to get the actual country center for ZOOM/ROTATION
+        centroidCoords[f.properties.ADM0_A3] = d3.geoCentroid(f);
+    }    
         // Fix geometry orientation (Standard fix for Natural Earth data)
         if(!f.geometry) return;
         if(f.geometry.type === "Polygon") f.geometry.coordinates.forEach(r => r.reverse());
@@ -160,6 +175,7 @@ Promise.all([
     });
 
     console.log("Successfully loaded " + GLOBAL_SHIPPING_DATA.length + " routes from CSV.");
+
 
     // --- DRAW LAYERS ---
 
@@ -205,9 +221,13 @@ Promise.all([
             } else {
                 alert("No recorded trade routes for " + countryName);
             }
-
             var centroid = d3.geoCentroid(d);
+            
+            // Zoom in! (Scale x 2.5)
             rotateTo(centroid, initialScale * 2.5);
+    // If we couldn't find the pre-calculated centroid, use the default D3 calculation
+               rotateTo(d3.geoCentroid(d), initialScale * 2.5);
+        
         })
         .on("mouseover", function(event, d) {
             tooltip.transition().duration(200).style("opacity", 1);
