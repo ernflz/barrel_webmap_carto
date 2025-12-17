@@ -37,40 +37,83 @@ function updateRoutes(dataToShow) {
             id: route.name + route.value // Unique ID for D3 updates
         }
     }));
-
-    var lines = svg.selectAll(".shipping-route")
+    // We'll draw each route as a group containing a primary path and several sketch strokes
+    var groups = svg.selectAll('.shipping-route-group')
         .data(routeFeatures, d => d.properties.id);
 
-    lines.exit().remove();
+    groups.exit().remove();
 
-    var enterLines = lines.enter().append("path")
-        .attr("class", "shipping-route")
-        .attr("d", path)
-        .attr("fill", "none")
-        .attr("stroke", d => d.properties.color)
-        .attr("stroke-width", 3)
-        .attr("stroke-linecap", "round")
-        .attr("stroke-linejoin", "round")
-        .attr("opacity", 0.8);
-        
-    // Add Interaction to new lines
-    enterLines
-        .on("mouseover", function(event, d) {
-            d3.select(this).raise().attr("stroke-width", 6).attr("stroke", "white");
-            tooltip.transition().duration(200).style("opacity", 1);
-            tooltip.html("<strong>" + d.properties.name + "</strong><br/>" + d.properties.info)
-                    .style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px");
-        })
-        .on("mousemove", function(event) {
-            tooltip.style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px");
-        })
-        .on("mouseout", function(event, d) {
-            d3.select(this).attr("stroke-width", 3).attr("stroke", d.properties.color);
-            tooltip.transition().duration(500).style("opacity", 0);
+    var enter = groups.enter().append('g').attr('class', 'shipping-route-group');
+
+    // helper to jitter coordinates a bit (in degrees) to simulate sketchiness
+    function jitterCoords(coords, amp) {
+        return coords.map(function(c) {
+            return [c[0] + (Math.random() - 0.5) * amp, c[1] + (Math.random() - 0.5) * amp];
         });
+    }
 
-    // Update positions of existing lines (important for spinning)
-    svg.selectAll(".shipping-route").attr("d", path);
+    // For each entering group, append several path layers (primary + sketches)
+    enter.each(function(d) {
+        var g = d3.select(this);
+        // primary stroke
+        g.append('path').attr('class', 'shipping-route primary')
+            .datum(d)
+            .attr('d', path)
+            .attr('fill', 'none')
+            .attr('stroke', d.properties.color)
+            .attr('stroke-width', 3.5)
+            .attr('stroke-linecap', 'round')
+            .attr('stroke-linejoin', 'round')
+            .attr('opacity', 0.95);
+
+        // sketch layers: several thinner, dashed or semi-transparent strokes
+        for (var i = 0; i < 3; i++) {
+            var amp = 0.12 + i * 0.08; // jitter amplitude in degrees
+            var strokeW = 1.2 + i * 0.6;
+            var op = 0.35 - i * 0.08;
+            var dash = (i === 1) ? '6,6' : null;
+            var sketchPath = { type: 'LineString', coordinates: jitterCoords(d.geometry.coordinates, amp) };
+            g.append('path').attr('class', 'shipping-route sketch sketch-' + i)
+                .datum(sketchPath)
+                .attr('d', path)
+                .attr('fill', 'none')
+                .attr('stroke', d.properties.color)
+                .attr('stroke-width', strokeW)
+                .attr('stroke-linecap', 'round')
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-dasharray', dash)
+                .attr('opacity', op);
+        }
+
+        // add interaction on the primary path
+        g.select('.shipping-route.primary')
+            .on('mouseover', function(event, dd) {
+                var p = d3.select(this);
+                p.raise().attr('stroke-width', 6).attr('stroke', '#ffffff');
+                tooltip.transition().duration(200).style('opacity', 1);
+                tooltip.html('<strong>' + d.properties.name + '</strong><br/>' + d.properties.info)
+                       .style('left', (event.pageX + 15) + 'px').style('top', (event.pageY - 28) + 'px');
+            })
+            .on('mousemove', function(event) { tooltip.style('left', (event.pageX + 15) + 'px').style('top', (event.pageY - 28) + 'px'); })
+            .on('mouseout', function(event) {
+                var p = d3.select(this);
+                p.attr('stroke-width', 3.5).attr('stroke', d.properties.color);
+                tooltip.transition().duration(500).style('opacity', 0);
+            });
+    });
+
+    // Update positions of all groups (for projection changes)
+    svg.selectAll('.shipping-route-group').each(function(d) {
+        var g = d3.select(this);
+        // primary is bound to the full feature
+        g.select('.shipping-route.primary').datum(d).attr('d', path).attr('stroke', d.properties.color);
+        // sketch layers are bound to LineString datums with jitter; recompute jitter each update
+        g.selectAll('.shipping-route.sketch').each(function(sd, idx) {
+            var amp = 0.12 + idx * 0.08;
+            var sketchPath = { type: 'LineString', coordinates: jitterCoords(d.geometry.coordinates, amp) };
+            d3.select(this).datum(sketchPath).attr('d', path).attr('stroke', d.properties.color);
+        });
+    });
 }
 
 // SMOOTH TRANSITION FUNCTION
@@ -268,7 +311,7 @@ Promise.all([
        .datum({type: "Sphere"})
        .attr("class", "sphere")
        .attr("d", path)
-       .attr("fill", "#a5bfdd")
+       .attr("fill", "url(#ocean-texture)")
        .on("click", function() {
             console.log("Resetting map...");
             updateRoutes(GLOBAL_SHIPPING_DATA); // Show ALL routes
@@ -545,6 +588,35 @@ Promise.all([
     })();
     // LAYER 6: ATMOSPHERE
     var defs = svg.append("defs");
+
+    // Ocean brushstroke texture pattern
+    var pattern = defs.append("pattern")
+        .attr("id", "ocean-texture")
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("width", 400)
+        .attr("height", 400);
+
+    // darker base for more visible texture
+    pattern.append("rect").attr("width", 400).attr("height", 400).attr("fill", "#89a8c6");
+
+    // primary bold brush strokes
+    var strokes = pattern.append("g").attr("transform", "rotate(-18)").attr("fill", "none").attr("stroke", "#6f98b0").attr("stroke-width", 28).attr("stroke-linecap", "round").attr("opacity", 0.18);
+    for (var yy = -400; yy < 800; yy += 36) {
+        strokes.append("line").attr("x1", -400).attr("y1", yy).attr("x2", 1200).attr("y2", yy + 8);
+    }
+
+    // secondary medium strokes
+    var strokes2 = pattern.append("g").attr("transform", "rotate(-12)").attr("fill", "none").attr("stroke", "#9fc3dd").attr("stroke-width", 14).attr("stroke-linecap", "round").attr("opacity", 0.12);
+    for (var yy2 = -400; yy2 < 800; yy2 += 48) {
+        strokes2.append("line").attr("x1", -400).attr("y1", yy2).attr("x2", 1200).attr("y2", yy2 + 4);
+    }
+
+    // delicate highlight streaks to add 'brush' feel
+    var strokes3 = pattern.append("g").attr("transform", "rotate(-28)").attr("fill", "none").attr("stroke", "#ffffff").attr("stroke-width", 6).attr("stroke-linecap", "round").attr("opacity", 0.08);
+    for (var yy3 = -400; yy3 < 800; yy3 += 72) {
+        strokes3.append("line").attr("x1", -400).attr("y1", yy3).attr("x2", 1200).attr("y2", yy3 + 2);
+    }
+
     var gradient = defs.append("radialGradient").attr("id", "globe-shadow").attr("cx", "60%").attr("cy", "20%");
     gradient.append("stop").attr("offset", "10%").attr("stop-color", "white").attr("stop-opacity", 0.1);
     gradient.append("stop").attr("offset", "100%").attr("stop-color", "black").attr("stop-opacity", 0.4);

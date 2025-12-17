@@ -84,23 +84,25 @@ overflow: hidden;
 }
 
 .country {
-    fill: #f2f0e6;       /* Land Color */
+    fill: #fff3e6;       /* Slight warm/orange tint for land */
     
-    /* CHANGE THIS: */
-    stroke: #d0d0d0;     /* Light Grey (Internal Borders) */
-    stroke-width: 0.5px; /* Thin lines */
+    /* Make country borders more prominent */
+    stroke: #b36b00;     /* Warm brown for borders */
+    stroke-width: 1px; /* Thicker border */
 }
 
 .lake {
     fill: none;       /* Match Ocean Color */
-    stroke: #5d8ab9;     /* Slight border for definition */
-    stroke-width: 0.3px;
+    stroke: #7ea6c8;     /* Softer blue */
+    stroke-width: 0.2px;
+    stroke-opacity: 0.55;
 }
 
 .river {
     fill: none;
-    stroke: #5d8ab9;     /* River Blue */
-    stroke-width: 0.4px;
+    stroke: #6394be;     /* Softer river blue */
+    stroke-width: 0.25px;
+    stroke-opacity: 0.65;
 }
 
 .coastline {
@@ -159,6 +161,14 @@ body {
     stroke: #fff !important; /* Turn white on hover */
     cursor: pointer;
     filter: drop-shadow(0 0 5px white); /* Glowing effect */
+}
+
+/* Sketch styling for the multi-stroke effect */
+.shipping-route.primary {
+    mix-blend-mode: multiply;
+}
+.shipping-route.sketch {
+    mix-blend-mode: lighten;
 }
 
 /* Country list in the sidebar (bottom-left) */
