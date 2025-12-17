@@ -16,13 +16,13 @@ var projection = d3.geoOrthographic()
     .scale(initialScale)
     .translate([width / 2, height / 2])
     .clipAngle(90);
-
 var path = d3.geoPath().projection(projection);
 
 // --- 3. GLOBAL VARIABLES ---
 var GLOBAL_SHIPPING_DATA = [];
 var LAND_CHECKER = null;
 var ALL_YEARS = []; // To store unique years for the timeline
+var SELECTED_COUNTRIES = new Set(); // Active countries to filter routes
 
 // --- 4. ANIMATION HELPERS ---
 function updateRoutes(dataToShow) {
@@ -79,14 +79,14 @@ function rotateTo(centroid, scale) {
     var currentScale = projection.scale();
 
     // In D3, rotation is [-Long, -Lat]
-    var targetRotate = [-centroid[0], -centroid[1]];
+    var targetRotate = [-centroid[0], -centroid[1], 0];
     
     // Create a transition for the projection math
     d3.transition()
-        .duration(1500) // 1.5 Seconds animation
+        .duration(1000)
         .tween("rotate", function() {
             var r = d3.interpolate(rotate, targetRotate);
-            var s = d3.interpolate(currentScale, scale);
+            var s = d3.interpolate(currentScale, scale || currentScale);
             return function(t) {
                 projection.rotate(r(t));
                 projection.scale(s(t));
@@ -94,6 +94,52 @@ function rotateTo(centroid, scale) {
                 svg.selectAll("path").attr("d", path);       // Redraw everything
             };
         });
+}
+
+// Zoom to a country and any connecting routes: compute bounds and pick appropriate scale
+function zoomToCountry(countryFeature) {
+    var countryName = countryFeature.properties && (countryFeature.properties.NAME || countryFeature.properties.name);
+
+    // Collect relevant routes (LineString coordinates)
+    var relevant = GLOBAL_SHIPPING_DATA.filter(function(r) {
+        return r.countries && r.countries.includes(countryName) || (r.name && r.name.includes(countryName));
+    });
+
+    // Create a feature collection including the country and route lines
+    var feats = [countryFeature];
+    relevant.forEach(function(r) {
+        feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: r.path } });
+    });
+
+    var fc = { type: 'FeatureCollection', features: feats };
+
+    // Compute centroid for rotation
+    var centroid = d3.geoCentroid(countryFeature);
+
+    // Temporarily set projection to target rotation to measure bounds
+    var prevRotate = projection.rotate();
+    var prevScale = projection.scale();
+    var targetRotate = [-centroid[0], -centroid[1], 0];
+    projection.rotate(targetRotate);
+    path = d3.geoPath().projection(projection);
+
+    var b = path.bounds(fc);
+    var dx = Math.max(1, b[1][0] - b[0][0]);
+    var dy = Math.max(1, b[1][1] - b[0][1]);
+
+    // Compute scale factor to fit bounds within viewport with some margin
+    var factor = Math.min((width * 0.7) / dx, (height * 0.7) / dy);
+    var desiredScale = Math.max(50, Math.min(prevScale * factor, prevScale * 20));
+
+    // Restore previous rotate/scale before animating
+    projection.rotate(prevRotate);
+    projection.scale(prevScale);
+
+    // Finally animate to the target rotation and scale
+    rotateTo(centroid, desiredScale);
+
+    // Update displayed routes (filter to relevant)
+    if (relevant.length > 0) updateRoutes(relevant);
 }
 
 // NEW FUNCTION: Filter by Year and Update Map
@@ -109,6 +155,13 @@ function updateMapByYear(targetYear) {
     var filteredRoutes = GLOBAL_SHIPPING_DATA.filter(function(r) {
         return r.year === targetYearInt;
     });
+
+    // If any countries are selected in the sidebar, further filter by them
+    if (SELECTED_COUNTRIES && SELECTED_COUNTRIES.size > 0) {
+        filteredRoutes = filteredRoutes.filter(function(r) {
+            return r.countries && r.countries.some(function(c) { return SELECTED_COUNTRIES.has(c); });
+        });
+    }
 
     // Update the displayed year text
     d3.select("#current-year-display").text("Current Year: " + targetYear);
@@ -128,6 +181,7 @@ Promise.all([
     d3.json("dbs/ne_10m_rivers_lake_centerlines.json"),
     d3.json("dbs/ne_10m_lakes.json"),
     d3.json("dbs/ne_10m_coastline.json"),
+    d3.json("dbs/ne_10m_ports.json"),
     // ⬇ CRITICAL: dsv(";") tells D3 to read Semicolons!
     d3.dsv(";", "dbs/trade_data.csv"),
     d3.dsv(";", "dbs/ports.csv")
@@ -140,8 +194,9 @@ Promise.all([
     var rivers = files[1];
     var lakes = files[2];
     var coastlines = files[3];
-    var tradeData = files[4];
-    var portData = files[5]
+    var portsGeo = files[4];
+    var tradeData = files[5];
+    var portData = files[6];
 
     // --- STEP A: MAP ISO CODES TO COORDINATES ---
     var countryCoords = {};
@@ -242,29 +297,21 @@ Promise.all([
             
             var countryName = d.properties.NAME;
             console.log("Clicked: " + countryName);
-
-            // Filter logic: Filter by country AND current year selected by the slider
-            var currentYear = parseInt(d3.select("#current-year-display").text().split(": ")[1]);
-            
-            var relevantRoutes = GLOBAL_SHIPPING_DATA.filter(function(r) {
-                // Filter by year OR show all if currentYear is NaN (error state)
-                var yearMatch = isNaN(currentYear) || r.year === currentYear;
-                // Filter by country name
-                var countryMatch = r.countries.includes(countryName) || r.name.includes(countryName);
-
-                return yearMatch && countryMatch;
-            });
-
-            if (relevantRoutes.length > 0) {
-                updateRoutes(relevantRoutes);
-            } else {
-                alert("No recorded trade routes for " + countryName + " in the year " + currentYear);
+            // Ensure the clicked country is selected in the sidebar list
+            if (!SELECTED_COUNTRIES.has(countryName)) {
+                SELECTED_COUNTRIES.add(countryName);
+                // If a checkbox exists in the sidebar, check it
+                var cb = document.querySelector('#country-list input.country-checkbox[value="' + countryName + '"]');
+                if (cb) cb.checked = true;
             }
-            
-            var centroid = d3.geoCentroid(d);
-            
-            // Zoom in! (Scale x 2.5)
-            rotateTo(centroid, initialScale * 2.5);
+
+            // Use the selected-country filter and current year to update visible routes
+            var currentYearText = d3.select("#current-year-display").text().split(": ")[1];
+            var yearToUse = currentYearText || 'ALL';
+            updateMapByYear(yearToUse);
+
+            // Zoom to the country extents and its connection lines
+            zoomToCountry(d);
         
         })
         .on("mouseover", function(event, d) {
@@ -285,8 +332,217 @@ Promise.all([
 
     // LAYER 5: DRAW INITIAL ROUTES (Set to latest year)
     var initialYear = ALL_YEARS[ALL_YEARS.length - 1];
+
+    // Spain–UK auto-route removed per request: no yellow ocean-routed lines
     updateMapByYear(initialYear);
 
+    // --- Draw one ocean-avoiding polyline between Algeciras (Spain) and Portsmouth (UK) ---
+    (function drawOnePortConnection() {
+        if (!portsGeo || !portsGeo.features) return;
+
+        // Find port by name (Algeciras)
+        var algeciras = portsGeo.features.find(f => f.properties && f.properties.name === 'Algeciras');
+
+        // Find Portsmouth (choose the UK one near lat ~50.8)
+        var possiblePorts = portsGeo.features.filter(f => f.properties && f.properties.name === 'Portsmouth');
+        var portsmouth = null;
+        if (possiblePorts.length === 1) portsmouth = possiblePorts[0];
+        else if (possiblePorts.length > 1) {
+            // pick the one with latitude around 50.8 (UK)
+            portsmouth = possiblePorts.reduce(function(best, f) {
+                var lat = f.geometry && f.geometry.coordinates ? f.geometry.coordinates[1] : 0;
+                return (best === null || Math.abs(lat - 50.8) < Math.abs((best.geometry.coordinates[1] || 0) - 50.8)) ? f : best;
+            }, null);
+        }
+
+        if (!algeciras || !portsmouth) {
+            console.log('Could not find Algeciras or Portsmouth ports to draw connection.');
+            return;
+        }
+
+        var start = algeciras.geometry.coordinates;
+        var end = portsmouth.geometry.coordinates;
+
+        // Build polyline using offshore waypoint insertion to avoid land runs
+        function pointInLand(pt) {
+            for (var i = 0; i < countries.features.length; i++) {
+                try { if (d3.geoContains(countries.features[i], pt)) return true; } catch(e) {}
+            }
+            return false;
+        }
+
+        // Normalize lon to [-180,180]
+        function normalizeLon(lon) {
+            var l = lon;
+            while (l > 180) l -= 360;
+            while (l < -180) l += 360;
+            return l;
+        }
+
+        // Try to find a nearby ocean waypoint around a midpoint by searching circular offsets
+        function findWaypointAround(mid) {
+            var midLon = mid[0], midLat = mid[1];
+            var radii = [1, 2, 4, 8, 12]; // degrees
+            var stepAngle = 30 * Math.PI/180;
+            for (var ri = 0; ri < radii.length; ri++) {
+                var r = radii[ri];
+                for (var a = 0; a < 2*Math.PI; a += stepAngle) {
+                    var candLon = normalizeLon(midLon + r * Math.cos(a));
+                    var candLat = midLat + r * Math.sin(a);
+                    if (candLat > 89.9) candLat = 89.9; if (candLat < -89.9) candLat = -89.9;
+                    var cand = [candLon, candLat];
+                    if (!pointInLand(cand)) return cand;
+                }
+            }
+            return null;
+        }
+
+        // Use explicit manual offshore waypoints (approx. 10 points) to force an ocean-only path.
+        // These are placed progressively west then north of Iberia into the Bay of Biscay,
+        // then east toward the English Channel, keeping clear of the coastline.
+        var waypoints = [
+            [-6.0, 36.0],  // 1: west of Gibraltar (offshore)
+            [-10, 36.8],  // 2: moving west-southwest
+            [-10, 37.8],  // 3: off SW Spain
+            [-10, 39.5],  // 4: off Portugal (west of Lisbon)
+            [-10, 41.5],  // 5: NW Portugal / Galicia offshore
+            [-10.0, 43.5], // 6: W of Galicia (still offshore)
+            [-9.0, 45.0],  // 7: central Atlantic, west of Bay of Biscay
+            [-7.0, 46.5],  // 8: mid Bay of Biscay
+            [-5.0, 48.5],  // 9: approaching Brittany, well offshore
+            [-2.5, 50.0]   // 10: western approach to the English Channel toward Portsmouth
+        ];
+
+        // Build final polyline via start -> waypoints -> end, interpolating between legs
+        var fullPts = [];
+        var legs = [start].concat(waypoints).concat([end]);
+        for (var li = 0; li < legs.length-1; li++) {
+            var a = legs[li], b = legs[li+1];
+            var legInterp = d3.geoInterpolate(a, b);
+            var legSamples = Math.max(6, Math.floor(60 / Math.max(1, legs.length-1)));
+            for (var t = 0; t <= legSamples; t++) {
+                var p = legInterp(t / legSamples);
+                fullPts.push(p);
+            }
+        }
+
+        GLOBAL_SHIPPING_DATA.push({
+            name: 'Algeciras <-> Portsmouth',
+            info: 'Single port-to-port connection (offshore waypoint)',
+            value: 0,
+            color: '#ffff00',
+            path: fullPts,
+            countries: ['Spain', 'United Kingdom'],
+            year: initialYear
+        });
+
+        updateMapByYear(initialYear);
+        console.log('Drew Algeciras → Portsmouth connection with', waypoints.length, 'waypoints.');
+    })();
+
+    // --- 9. INTERACTION: SPIN & ZOOM (Globe) ---
+    var sensitivity = 75;
+    var drag = d3.drag().on("drag", function(event) {
+        var rotate = projection.rotate ? projection.rotate() : [0,0,0];
+        var k = sensitivity / projection.scale();
+        projection.rotate([rotate[0] + event.dx * k, rotate[1] - event.dy * k]);
+        path = d3.geoPath().projection(projection);
+        svg.selectAll("path").attr("d", path);
+    });
+
+    var zoom = d3.zoom().scaleExtent([initialScale * 0.25, initialScale * 4]).on("zoom", function(event) {
+        projection.scale(event.transform.k);
+        path = d3.geoPath().projection(projection);
+        svg.selectAll("path").attr("d", path);
+    });
+
+    svg.call(drag);
+    svg.call(zoom).call(zoom.transform, d3.zoomIdentity.translate(width/2, height/2).scale(initialScale));
+
+    // --- COUNTRY LIST UI: build list of countries that have associated routes ---
+    (function buildCountryList() {
+        // Append the floating list to the document body so it's fixed to viewport bottom
+        var container = document.body;
+
+        // Compute unique country names from the shipping data
+        var countrySet = new Set();
+        GLOBAL_SHIPPING_DATA.forEach(function(r) {
+            if (r.countries && Array.isArray(r.countries)) r.countries.forEach(function(c) { if (c) countrySet.add(c); });
+        });
+
+        var countriesArr = Array.from(countrySet).sort();
+
+        // Remove existing list if present
+        var existing = document.getElementById('country-list');
+        if (existing) existing.remove();
+
+        var list = document.createElement('div');
+        list.id = 'country-list';
+
+        if (countriesArr.length === 0) {
+            list.textContent = 'No country route data available.';
+            container.appendChild(list);
+            return;
+        }
+
+        // Add quick controls at top of list
+        var ctrlRow = document.createElement('div');
+        ctrlRow.style.display = 'flex';
+        ctrlRow.style.justifyContent = 'space-between';
+        ctrlRow.style.marginBottom = '6px';
+
+        var selectAllBtn = document.createElement('button');
+        selectAllBtn.textContent = 'Select all';
+        selectAllBtn.onclick = function() { countriesArr.forEach(c => SELECTED_COUNTRIES.add(c)); updateMapByYear(document.getElementById('current-year-display') ? document.getElementById('current-year-display').textContent.split(': ')[1] : 'ALL'); buildCountryList(); };
+        var clearBtn = document.createElement('button');
+        clearBtn.textContent = 'Clear';
+        clearBtn.onclick = function() { SELECTED_COUNTRIES.clear(); updateMapByYear(document.getElementById('current-year-display') ? document.getElementById('current-year-display').textContent.split(': ')[1] : 'ALL'); buildCountryList(); };
+
+        ctrlRow.appendChild(selectAllBtn);
+        ctrlRow.appendChild(clearBtn);
+        list.appendChild(ctrlRow);
+
+        countriesArr.forEach(function(cn) {
+            var item = document.createElement('div');
+            item.className = 'country-item';
+
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'country-checkbox';
+            cb.value = cn;
+
+            // default checked if previously selected
+            cb.checked = SELECTED_COUNTRIES.has(cn);
+
+            cb.addEventListener('change', function(ev) {
+                if (ev.target.checked) SELECTED_COUNTRIES.add(cn); else SELECTED_COUNTRIES.delete(cn);
+                // Respect current year selection
+                var currentYearText = document.getElementById('current-year-display') ? document.getElementById('current-year-display').textContent.split(': ')[1] : null;
+                var yearToUse = currentYearText || 'ALL';
+                updateMapByYear(yearToUse);
+            });
+
+            var label = document.createElement('div');
+            label.className = 'country-label';
+            label.textContent = cn;
+            label.addEventListener('click', function() {
+                // When clicking the name, zoom to the country and ensure it's selected
+                if (!SELECTED_COUNTRIES.has(cn)) { cb.checked = true; SELECTED_COUNTRIES.add(cn); }
+                // Find the country feature
+                var cf = countries.features.find(function(f) { var n = f.properties && (f.properties.NAME || f.properties.name); return n === cn; });
+                if (cf) zoomToCountry(cf);
+                var currentYearText = document.getElementById('current-year-display') ? document.getElementById('current-year-display').textContent.split(': ')[1] : null;
+                var yearToUse = currentYearText || 'ALL';
+                updateMapByYear(yearToUse);
+            });
+
+            item.appendChild(cb);
+            item.appendChild(label);
+            list.appendChild(item);
+        });
+
+        container.appendChild(list);
+    })();
     // LAYER 6: ATMOSPHERE
     var defs = svg.append("defs");
     var gradient = defs.append("radialGradient").attr("id", "globe-shadow").attr("cx", "60%").attr("cy", "20%");
@@ -431,23 +687,44 @@ Promise.all([
 
     // --- 9. INTERACTION: SPIN & ZOOM ---
     var sensitivity = 75;
-    var drag = d3.drag().on("drag", function(event) {
-        var rotate = projection.rotate();
-        var k = sensitivity / projection.scale();
-        projection.rotate([rotate[0] + event.dx * k, rotate[1] - event.dy * k]);
-        path = d3.geoPath().projection(projection);
-        svg.selectAll("path").attr("d", path);
-    });
-
-    var zoom = d3.zoom().scaleExtent([200, 2000]).on("zoom", function(event) {
-        projection.scale(event.transform.k);
-        path = d3.geoPath().projection(projection);
-        svg.selectAll("path").attr("d", path);
-    });
-
-    svg.call(drag);
-    svg.call(zoom).call(zoom.transform, d3.zoomIdentity.translate(width/2, height/2).scale(initialScale));
+    // Interaction disabled: static Equal Earth projection (no drag/zoom)
 
 }).catch(function(error) {
     console.error("Error:", error);
 });
+
+// --- Sidebar toggle (connects HTML sidebar with JS) ---
+;(function() {
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    var legend = document.getElementById('legend');
+    if (!sidebarToggle || !legend) return;
+
+    sidebarToggle.addEventListener('click', function() {
+        var isHidden = legend.style.display === 'none';
+        if (isHidden) {
+            legend.style.display = '';
+            sidebarToggle.textContent = 'Hide';
+            var existingShow = document.getElementById('sidebar-show');
+            if (existingShow) existingShow.remove();
+        } else {
+            // Hide the legend and create a floating "Show" button so it can be restored
+            legend.style.display = 'none';
+            // Create floating show button if not present
+            if (!document.getElementById('sidebar-show')) {
+                var showBtn = document.createElement('button');
+                showBtn.id = 'sidebar-show';
+                showBtn.className = 'sidebar-show-button';
+                showBtn.textContent = 'Show';
+                document.body.appendChild(showBtn);
+
+                showBtn.addEventListener('click', function() {
+                    legend.style.display = '';
+                    // ensure internal toggle text is correct
+                    var internalToggle = document.getElementById('sidebar-toggle');
+                    if (internalToggle) internalToggle.textContent = 'Hide';
+                    showBtn.remove();
+                });
+            }
+        }
+    });
+})();
