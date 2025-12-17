@@ -62,7 +62,23 @@ body {
     box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
     z-index: 1000;
 }
-
+.tooltip {
+  position: absolute;
+  text-align: center;
+  width: auto;
+  height: auto;
+  padding: 10px;
+  font: 12px sans-serif;
+  background: black;
+  color: white;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+}
+body {
+    background-color: #333; /* Dark background to see map and timeline */
+}
 /* Highlight Hovered Country */
 .country:hover {
     fill: #ffcc00 !important; /* Bright Yellow */
