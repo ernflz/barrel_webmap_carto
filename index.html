@@ -14,13 +14,23 @@
     <div id="main-layout">
         <aside id="legend">
             <div id="legend-header">
-                <h2>Legend & Controls</h2>
+                <div id="tab-buttons">
+                    <button id="tab-legend" class="tab-btn active">Legend & Controls</button>
+                    <button id="tab-controls" class="tab-btn">Country Selection</button>
+                </div>
                 <button id="sidebar-toggle">Hide</button>
             </div>
-            <div id="sidebar-content">
+            
+            <!-- Legend Tab Content -->
+            <div id="tab-legend-content" class="tab-content active">
                 <p>Use the timeline to filter routes by year.</p>
                 <p id="sidebar-note">Click countries to zoom and show routes.</p>
                 <!-- Additional legend items can be populated by `mp_1.js` -->
+            </div>
+            
+            <!-- Controls Tab Content -->
+            <div id="tab-controls-content" class="tab-content">
+                <!-- Country list will be inserted here by mp_1.js -->
             </div>
         </aside>
 

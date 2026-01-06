@@ -504,8 +504,8 @@ Promise.all([
 
     // --- COUNTRY LIST UI: build list of countries that have associated routes ---
     (function buildCountryList() {
-        // Append the floating list to the document body so it's fixed to viewport bottom
-        var container = document.body;
+        // Append the list to the Controls tab
+        var container = document.getElementById('tab-controls-content');
 
         // Compute unique country names from the shipping data
         var countrySet = new Set();
@@ -516,11 +516,11 @@ Promise.all([
         var countriesArr = Array.from(countrySet).sort();
 
         // Remove existing list if present
-        var existing = document.getElementById('country-list');
+        var existing = container.querySelector('.country-list-inner');
         if (existing) existing.remove();
 
         var list = document.createElement('div');
-        list.id = 'country-list';
+        list.className = 'country-list-inner';
 
         if (countriesArr.length === 0) {
             list.textContent = 'No country route data available.';
@@ -528,26 +528,57 @@ Promise.all([
             return;
         }
 
-        // Add quick controls at top of list
+        // Add header with title and counter
+        var header = document.createElement('div');
+        header.style.marginBottom = '10px';
+        header.style.borderBottom = '2px solid #007acc';
+        header.style.paddingBottom = '8px';
+        
+        var title = document.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.fontSize = '14px';
+        title.style.color = '#333';
+        title.style.marginBottom = '4px';
+        title.textContent = 'Select Countries';
+        
+        var counter = document.createElement('div');
+        counter.id = 'country-counter';
+        counter.style.fontSize = '12px';
+        counter.style.color = '#666';
+        counter.textContent = SELECTED_COUNTRIES.size + ' / ' + countriesArr.length + ' selected';
+        
+        header.appendChild(title);
+        header.appendChild(counter);
+        list.appendChild(header);
+
+        // Add quick controls
         var ctrlRow = document.createElement('div');
         ctrlRow.style.display = 'flex';
-        ctrlRow.style.justifyContent = 'space-between';
-        ctrlRow.style.marginBottom = '6px';
+        ctrlRow.style.gap = '6px';
+        ctrlRow.style.marginBottom = '8px';
 
         var selectAllBtn = document.createElement('button');
-        selectAllBtn.textContent = 'Select all';
+        selectAllBtn.textContent = 'Select All';
+        selectAllBtn.className = 'country-btn';
         selectAllBtn.onclick = function() { countriesArr.forEach(c => SELECTED_COUNTRIES.add(c)); updateMapByYear(document.getElementById('current-year-display') ? document.getElementById('current-year-display').textContent.split(': ')[1] : 'ALL'); buildCountryList(); };
+        
         var clearBtn = document.createElement('button');
         clearBtn.textContent = 'Clear';
+        clearBtn.className = 'country-btn';
         clearBtn.onclick = function() { SELECTED_COUNTRIES.clear(); updateMapByYear(document.getElementById('current-year-display') ? document.getElementById('current-year-display').textContent.split(': ')[1] : 'ALL'); buildCountryList(); };
 
         ctrlRow.appendChild(selectAllBtn);
         ctrlRow.appendChild(clearBtn);
         list.appendChild(ctrlRow);
 
+        // Container for country items with scroll
+        var itemsContainer = document.createElement('div');
+        itemsContainer.className = 'country-items-container';
+
         countriesArr.forEach(function(cn) {
             var item = document.createElement('div');
             item.className = 'country-item';
+            item.setAttribute('data-country', cn.toLowerCase());
 
             var cb = document.createElement('input');
             cb.type = 'checkbox';
@@ -563,6 +594,9 @@ Promise.all([
                 var currentYearText = document.getElementById('current-year-display') ? document.getElementById('current-year-display').textContent.split(': ')[1] : null;
                 var yearToUse = currentYearText || 'ALL';
                 updateMapByYear(yearToUse);
+                // Update counter
+                var counter = document.getElementById('country-counter');
+                if (counter) counter.textContent = SELECTED_COUNTRIES.size + ' / ' + countriesArr.length + ' selected';
             });
 
             var label = document.createElement('div');
@@ -577,13 +611,17 @@ Promise.all([
                 var currentYearText = document.getElementById('current-year-display') ? document.getElementById('current-year-display').textContent.split(': ')[1] : null;
                 var yearToUse = currentYearText || 'ALL';
                 updateMapByYear(yearToUse);
+                // Update counter
+                var counter = document.getElementById('country-counter');
+                if (counter) counter.textContent = SELECTED_COUNTRIES.size + ' / ' + countriesArr.length + ' selected';
             });
 
             item.appendChild(cb);
             item.appendChild(label);
-            list.appendChild(item);
+            itemsContainer.appendChild(item);
         });
 
+        list.appendChild(itemsContainer);
         container.appendChild(list);
     })();
     // LAYER 6: ATMOSPHERE
@@ -798,5 +836,37 @@ Promise.all([
                 });
             }
         }
+    });
+})();
+
+// --- Tab switching (Legend vs Controls) ---
+;(function() {
+    var tabLegendBtn = document.getElementById('tab-legend');
+    var tabControlsBtn = document.getElementById('tab-controls');
+    var tabLegendContent = document.getElementById('tab-legend-content');
+    var tabControlsContent = document.getElementById('tab-controls-content');
+    
+    if (!tabLegendBtn || !tabControlsBtn || !tabLegendContent || !tabControlsContent) return;
+    
+    function switchTab(tabName) {
+        if (tabName === 'legend') {
+            tabLegendBtn.classList.add('active');
+            tabControlsBtn.classList.remove('active');
+            tabLegendContent.classList.add('active');
+            tabControlsContent.classList.remove('active');
+        } else if (tabName === 'controls') {
+            tabLegendBtn.classList.remove('active');
+            tabControlsBtn.classList.add('active');
+            tabLegendContent.classList.remove('active');
+            tabControlsContent.classList.add('active');
+        }
+    }
+    
+    tabLegendBtn.addEventListener('click', function() {
+        switchTab('legend');
+    });
+    
+    tabControlsBtn.addEventListener('click', function() {
+        switchTab('controls');
     });
 })();
