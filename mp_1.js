@@ -273,36 +273,8 @@ Promise.all([
     });
 
     // --- STEP B: PROCESS THE CSV INTO ROUTES (MODIFIED) ---
-    tradeData.forEach(function(row) {
-        // 1. Determine Start & End based on Flow (Import vs Export)
-        var startCode, endCode;
-
-        if (row.flowDesc === "Import") {
-            startCode = row.partnerISO;   // Goods come FROM Partner
-            endCode = row.reporterISO;    // Goods go TO Reporter
-        } else {
-            startCode = row.reporterISO;  // Goods leave Reporter
-            endCode = row.partnerISO;     // Goods go TO Partner
-        }
-
-        // 2. Look up Coordinates in our map dictionary
-        var startCoord = countryCoords[startCode];
-        var endCoord = countryCoords[endCode];
-
-        // 3. If we found both locations, create the route object
-        if (startCoord && endCoord) {
-            GLOBAL_SHIPPING_DATA.push({
-                name: row.reporterDesc + " <-> " + row.partnerDesc,
-                info: row.flowDesc + " Value: $" + parseInt(row.primaryValue.replace(',', '')).toLocaleString(),
-                value: row.primaryValue,
-                // Color: Red (#ff4d4d) for Import, Green (#00cc66) for Export
-                color: row.flowDesc === "Import" ? "#ff4d4d" : "#00cc66", 
-                path: [startCoord, endCoord],
-                countries: [row.reporterDesc, row.partnerDesc], // Used for filtering clicks
-                year: parseInt(row.refYear) // <-- CRITICAL: Store the year!
-            });
-        }
-    });
+    
+    
 
     // --- STEP C: LOAD ROUTES FROM shipping_routes.json (if present) ---
     try {
@@ -481,44 +453,9 @@ Promise.all([
         // Use explicit manual offshore waypoints (approx. 10 points) to force an ocean-only path.
         // These are placed progressively west then north of Iberia into the Bay of Biscay,
         // then east toward the English Channel, keeping clear of the coastline.
-        var waypoints = [
-            [-6.0, 36.0],  // 1: west of Gibraltar (offshore)
-            [-10, 36.8],  // 2: moving west-southwest
-            [-10, 37.8],  // 3: off SW Spain
-            [-10, 39.5],  // 4: off Portugal (west of Lisbon)
-            [-10, 41.5],  // 5: NW Portugal / Galicia offshore
-            [-10.0, 43.5], // 6: W of Galicia (still offshore)
-            [-9.0, 45.0],  // 7: central Atlantic, west of Bay of Biscay
-            [-7.0, 46.5],  // 8: mid Bay of Biscay
-            [-5.0, 48.5],  // 9: approaching Brittany, well offshore
-            [-2.5, 50.0]   // 10: western approach to the English Channel toward Portsmouth
-        ];
+        
 
-        // Build final polyline via start -> waypoints -> end, interpolating between legs
-        var fullPts = [];
-        var legs = [start].concat(waypoints).concat([end]);
-        for (var li = 0; li < legs.length-1; li++) {
-            var a = legs[li], b = legs[li+1];
-            var legInterp = d3.geoInterpolate(a, b);
-            var legSamples = Math.max(6, Math.floor(60 / Math.max(1, legs.length-1)));
-            for (var t = 0; t <= legSamples; t++) {
-                var p = legInterp(t / legSamples);
-                fullPts.push(p);
-            }
-        }
-
-        GLOBAL_SHIPPING_DATA.push({
-            name: 'Algeciras <-> Portsmouth',
-            info: 'Single port-to-port connection (offshore waypoint)',
-            value: 0,
-            color: '#ffff00',
-            path: fullPts,
-            countries: ['Spain', 'United Kingdom'],
-            year: initialYear
-        });
-
-        updateMapByYear(initialYear);
-        console.log('Drew Algeciras → Portsmouth connection with', waypoints.length, 'waypoints.');
+       
     })();
 
     // --- 9. INTERACTION: SPIN & ZOOM (Globe) ---
