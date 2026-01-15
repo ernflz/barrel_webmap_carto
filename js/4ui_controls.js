@@ -36,6 +36,7 @@ var drag = d3.drag()
             svg.selectAll(".country").attr("d", path);
             svg.selectAll(".sphere").attr("d", path);
             svg.selectAll(".shipping-route").attr("d", path);
+            svg.selectAll(".wine-region").attr("d", path);
         } catch (e) {
             console.warn("Path update error:", e);
         }
@@ -95,6 +96,7 @@ var zoom = d3.zoom()
             svg.selectAll(".country").attr("d", path);
             svg.selectAll(".sphere").attr("d", path);
             svg.selectAll(".shipping-route").attr("d", path);
+            svg.selectAll(".wine-region").attr("d", path);
         } catch (e) {
             console.warn("Path update error:", e);
         }

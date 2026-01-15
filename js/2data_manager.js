@@ -12,7 +12,8 @@ Promise.all([
     d3.dsv(";", "data/trade_data/trade_data.csv"),
     d3.dsv(";", "data/flows/ports.csv"),
     d3.json("data/flows/shipping_routes.json"),
-    d3.json("data/trade_data/distilleries.json")
+    d3.json("data/trade_data/distilleries.json"),
+    d3.json("data/basemap/wineregions.json")
 ]).then(function(files) {
 
     var countries = files[0];
@@ -24,6 +25,7 @@ Promise.all([
     var portData = files[6];
     var shippingRoutesFile = files[7];
     var distilleryData = files[8];
+    var wineRegions = files[9];
 
     // ========================================================================
     // STEP 1: INITIALIZE YEAR TIMELINE & COUNTRY MAPPING
@@ -123,7 +125,7 @@ Promise.all([
     // ========================================================================
 
     // Draw all map layers
-    drawLayers(countries, lakes, rivers);
+    drawLayers(countries, lakes, rivers, wineRegions);
 
     // Build and display the countries with routes list in the sidebar
     buildCountriesWithRoutesList();

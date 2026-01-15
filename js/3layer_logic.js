@@ -5,7 +5,7 @@
 /**
  * Initialize and draw all map layers (ocean, grid, countries, water bodies, routes)
  */
-function drawLayers(countries, lakes, rivers) {
+function drawLayers(countries, lakes, rivers, wineRegions) {
     // ========================================================================
     // LAYER 1: OCEAN BACKGROUND
     // ========================================================================
@@ -104,7 +104,37 @@ function drawLayers(countries, lakes, rivers) {
     svg.selectAll(".river").data(rivers.features).enter().append("path").attr("class", "river").attr("d", path);
 
     // ========================================================================
-    // LAYER 5: SHIPPING ROUTES
+    // LAYER 5: WINE REGIONS
+    // ========================================================================
+
+    svg.selectAll(".wine-region")
+        .data(wineRegions.features)
+        .enter()
+        .append("path")
+        .attr("class", "wine-region")
+        .attr("d", path)
+        .attr("fill", "none")
+        .attr("stroke", "#8B4513")
+        .attr("stroke-width", 1.5)
+        .on("mouseover", function(event, d) {
+            d3.select(this).attr("stroke-width", 2.5).attr("stroke", "#D2691E");
+            tooltip.transition().duration(200).style("opacity", 1);
+            var regionName = d.properties.Region || "Wine Region";
+            tooltip.html("<strong>" + regionName + "</strong>")
+                .style("left", (event.pageX + 15) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mousemove", function(event) {
+            tooltip.style("left", (event.pageX + 15) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+            d3.select(this).attr("stroke-width", 1.5).attr("stroke", "#8B4513");
+            tooltip.transition().duration(500).style("opacity", 0);
+        });
+
+    // ========================================================================
+    // LAYER 6: SHIPPING ROUTES
     // ========================================================================
 
     // Set initial routes to the latest year
