@@ -9,41 +9,122 @@
 /**
  * Enable drag rotation of the globe
  */
-var drag = d3.drag().on("drag", function(event) {
-    var rotate = projection.rotate ? projection.rotate() : [0, 0, 0];
-    var sensitivity = 75;
-    var k = sensitivity / projection.scale();
-    projection.rotate([rotate[0] + event.dx * k, rotate[1] - event.dy * k]);
-    path = d3.geoPath().projection(projection);
-    
-    // safe update of paths
-    try {
-        svg.selectAll("path").attr("d", path);
-    } catch (e) {
-        console.warn("Path update error:", e);
-    }
+var isDragging = false;
+var dragEndTimer = null;
 
-    // Update distillery points
-    if (typeof updateDistilleryPositions === 'function') updateDistilleryPositions();
-});
+var drag = d3.drag()
+    .on("start", function(event) {
+        isDragging = true;
+        if (dragEndTimer) clearTimeout(dragEndTimer);
+        
+        // Hide non-essential layers for performance during drag
+        svg.selectAll(".graticule").style("opacity", 0);
+        svg.selectAll(".lake").style("opacity", 0);
+        svg.selectAll(".river").style("opacity", 0);
+        svg.selectAll(".distillery-point").style("opacity", 0);
+        svg.selectAll(".port").style("opacity", 0);
+    })
+    .on("drag", function(event) {
+        var rotate = projection.rotate ? projection.rotate() : [0, 0, 0];
+        var sensitivity = 75;
+        var k = sensitivity / projection.scale();
+        projection.rotate([rotate[0] + event.dx * k, rotate[1] - event.dy * k]);
+        path = d3.geoPath().projection(projection);
+        
+        // Only update essential layers (countries and shipping routes)
+        try {
+            svg.selectAll(".country").attr("d", path);
+            svg.selectAll(".sphere").attr("d", path);
+            svg.selectAll(".shipping-route").attr("d", path);
+        } catch (e) {
+            console.warn("Path update error:", e);
+        }
+    })
+    .on("end", function(event) {
+        isDragging = false;
+        
+        // Debounce the end to avoid rapid toggling
+        if (dragEndTimer) clearTimeout(dragEndTimer);
+        dragEndTimer = setTimeout(function() {
+            // Restore all layers after drag completes
+            path = d3.geoPath().projection(projection);
+            
+            try {
+                svg.selectAll("path").attr("d", path);
+            } catch (e) {
+                console.warn("Path update error:", e);
+            }
+            
+            // Fade layers back in
+            svg.selectAll(".graticule").transition().duration(200).style("opacity", 1);
+            svg.selectAll(".lake").transition().duration(200).style("opacity", 1);
+            svg.selectAll(".river").transition().duration(200).style("opacity", 1);
+            svg.selectAll(".distillery-point").transition().duration(200).style("opacity", 1);
+            svg.selectAll(".port").transition().duration(200).style("opacity", 1);
+            
+            // Update distillery positions after drag completes
+            if (typeof updateDistilleryPositions === 'function') updateDistilleryPositions();
+        }, 150);
+    });
 
 /**
  * Enable zoom functionality for the globe
  */
-var zoom = d3.zoom().scaleExtent([initialScale * 0.25, initialScale * 4]).on("zoom", function(event) {
-    projection.scale(event.transform.k);
-    path = d3.geoPath().projection(projection);
+var isZooming = false;
+var zoomEndTimer = null;
 
-    // safe update of paths
-    try {
-        svg.selectAll("path").attr("d", path);
-    } catch (e) {
-        console.warn("Path update error:", e);
-    }
+var zoom = d3.zoom()
+    .scaleExtent([initialScale * 0.25, initialScale * 4])
+    .on("start", function(event) {
+        isZooming = true;
+        if (zoomEndTimer) clearTimeout(zoomEndTimer);
+        
+        // Hide non-essential layers for performance during zoom
+        svg.selectAll(".graticule").style("opacity", 0);
+        svg.selectAll(".lake").style("opacity", 0);
+        svg.selectAll(".river").style("opacity", 0);
+        svg.selectAll(".distillery-point").style("opacity", 0);
+        svg.selectAll(".port").style("opacity", 0);
+    })
+    .on("zoom", function(event) {
+        projection.scale(event.transform.k);
+        path = d3.geoPath().projection(projection);
 
-    // Update distillery points
-    if (typeof updateDistilleryPositions === 'function') updateDistilleryPositions();
-});
+        // Only update essential layers (countries and shipping routes)
+        try {
+            svg.selectAll(".country").attr("d", path);
+            svg.selectAll(".sphere").attr("d", path);
+            svg.selectAll(".shipping-route").attr("d", path);
+        } catch (e) {
+            console.warn("Path update error:", e);
+        }
+    })
+    .on("end", function(event) {
+        isZooming = false;
+        
+        // Debounce the end to avoid rapid toggling
+        if (zoomEndTimer) clearTimeout(zoomEndTimer);
+        zoomEndTimer = setTimeout(function() {
+            // Restore all layers after zoom completes
+            path = d3.geoPath().projection(projection);
+            
+            try {
+                svg.selectAll("path").attr("d", path);
+            } catch (e) {
+                console.warn("Path update error:", e);
+            }
+            
+            // Fade layers back in
+            svg.selectAll(".graticule").transition().duration(200).style("opacity", 1);
+            svg.selectAll(".lake").transition().duration(200).style("opacity", 1);
+            svg.selectAll(".river").transition().duration(200).style("opacity", 1);
+            svg.selectAll(".distillery-point").transition().duration(200).style("opacity", 1);
+            svg.selectAll(".port").transition().duration(200).style("opacity", 1);
+            
+            // Update distillery positions after zoom completes
+            if (typeof updateDistilleryPositions === 'function') updateDistilleryPositions();
+        }, 150);
+    });
 
 // Apply drag and zoom to SVG
 svg.call(drag);
