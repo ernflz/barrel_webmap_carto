@@ -1,0 +1,300 @@
+// ============================================================================
+// MAP INITIALIZATION & SETUP
+// ============================================================================
+
+function getMapDimensions() {
+    var mapContainer = d3.select("#mapContainer").node();
+    if (mapContainer) {
+        return {
+            width: mapContainer.clientWidth || window.innerWidth,
+            height: mapContainer.clientHeight || window.innerHeight
+        };
+    }
+    return {
+        width: window.innerWidth,
+        height: window.innerHeight
+    };
+}
+
+var dims = getMapDimensions();
+var width = dims.width;
+var height = dims.height;
+
+// Create tooltip element for hover interactions
+var tooltip = d3.select("body").append("div").attr("class", "tooltip");
+
+// Create SVG container for the map
+var svg = d3.select("#mapContainer")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+// ============================================================================
+// PROJECTION SETUP
+// ============================================================================
+
+var initialScale = height / 2.5;
+var projection = d3.geoOrthographic()
+    .scale(initialScale)
+    .translate([width / 2, height / 2])
+    .clipAngle(90);
+var path = d3.geoPath().projection(projection);
+
+// ============================================================================
+// WINDOW RESIZE HANDLER
+// ============================================================================
+
+window.addEventListener('resize', function() {
+    var newDims = getMapDimensions();
+    width = newDims.width;
+    height = newDims.height;
+
+    // Update SVG dimensions
+    svg.attr("width", width).attr("height", height);
+
+    // Update projection scale and translation
+    var newScale = height / 2.5;
+    projection.scale(newScale).translate([width / 2, height / 2]);
+
+    // Recalculate path and redraw all elements
+    path = d3.geoPath().projection(projection);
+    svg.selectAll("path").attr("d", path);
+
+    // Update distillery points
+    if (typeof updateDistilleryPositions === 'function') {
+        updateDistilleryPositions();
+    }
+});
+
+// ============================================================================
+// GLOBAL STATE VARIABLES
+// ============================================================================
+
+var GLOBAL_SHIPPING_DATA = [];
+var ALL_YEARS = []; // Unique years extracted from trade data for the timeline slider
+var SELECTED_COUNTRIES = new Set(); // Active countries selected for filtering routes
+
+// ============================================================================
+// ROUTE RENDERING & INTERACTION
+// ============================================================================
+
+/**
+ * Transform raw route data into GeoJSON and render on map with interactive features
+ */
+function updateRoutes(dataToShow) {
+    // Transform the raw data into GeoJSON LineString features
+    var routeFeatures = dataToShow.map(route => ({
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: route.path },
+        properties: {
+            name: route.name,
+            color: route.color,
+            info: route.info,
+            id: route.name + route.value, // Unique ID for D3 updates
+            tradeData: route.tradeData // Include trade data in properties
+        }
+    }));
+    var groups = svg.selectAll('.shipping-route-group')
+        .data(routeFeatures, d => d.properties.id);
+
+    groups.exit().remove();
+
+    var enter = groups.enter().append('g').attr('class', 'shipping-route-group');
+
+    // Append path and interaction handlers to each route group
+    enter.each(function(d) {
+        var g = d3.select(this);
+
+        // Primary stroke path with low opacity
+        g.append('path').attr('class', 'shipping-route primary')
+            .datum(d)
+            .attr('d', path)
+            .attr('fill', 'none')
+            .attr('stroke', '#922029')
+            .attr('stroke-width', 18)
+            .attr('stroke-linecap', 'round')
+            .attr('stroke-linejoin', 'round')
+            .attr('opacity', 0.2);
+
+        // Add interaction handlers to the route path
+        g.select('.shipping-route.primary')
+            .on('mouseover', function(event, dd) {
+                var p = d3.select(this);
+                p.raise().attr('stroke-width', 12).attr('opacity', 1);
+                tooltip.transition().duration(200).style('opacity', 1);
+
+                // Format trade data for display
+                var trade = d.properties.tradeData || { qty: 0, value: 0 };
+
+                // Extract country names from ISO codes (format: "ISO1 - ISO2")
+                var routeParts = d.properties.name.split(' - ');
+                var country1 = routeParts[0] ? (window.ISO_TO_COUNTRY && window.ISO_TO_COUNTRY[routeParts[0].trim()] || routeParts[0]) : 'Unknown';
+                var country2 = routeParts[1] ? (window.ISO_TO_COUNTRY && window.ISO_TO_COUNTRY[routeParts[1].trim()] || routeParts[1]) : 'Unknown';
+                var displayName = country1 + ' - ' + country2;
+
+                var tooltipHTML = '<strong>' + displayName + '</strong><br/>';
+
+                // Format value: millions if >= 1M, otherwise regular number
+                if (trade.value && trade.value > 0) {
+                    if (trade.value >= 1000000) {
+                        tooltipHTML += 'Value: $' + (trade.value / 1000000).toFixed(2) + 'M<br/>';
+                    } else {
+                        tooltipHTML += 'Value: $' + Math.round(trade.value) + '<br/>';
+                    }
+                }
+
+                // Format amount: tons if >= 1000kg (1 ton), otherwise kilograms
+                if (trade.qty && trade.qty > 0) {
+                    if (trade.qty >= 1000) {
+                        tooltipHTML += 'Amount: ' + (trade.qty / 1000).toFixed(2) + ' tons';
+                    } else {
+                        tooltipHTML += 'Amount: ' + trade.qty.toFixed(0) + ' kg';
+                    }
+                }
+
+                tooltip.html(tooltipHTML)
+                    .style('left', (event.pageX + 15) + 'px').style('top', (event.pageY - 28) + 'px');
+            })
+            .on('mousemove', function(event) {
+                tooltip.style('left', (event.pageX + 15) + 'px').style('top', (event.pageY - 28) + 'px');
+            })
+            .on('mouseout', function(event) {
+                var p = d3.select(this);
+                p.attr('stroke-width', 20).attr('opacity', 0.2);
+                tooltip.transition().duration(500).style('opacity', 0);
+            });
+    });
+
+    // Update positions of all groups for projection changes
+    svg.selectAll('.shipping-route-group').each(function(d) {
+        var g = d3.select(this);
+        g.select('.shipping-route.primary').datum(d).attr('d', path).attr('stroke', d.properties.color);
+    });
+}
+
+// ============================================================================
+// MAP ROTATION & ZOOM ANIMATION
+// ============================================================================
+
+/**
+ * Animate rotation to a new centroid with optional scale change
+ */
+function rotateTo(centroid, scale) {
+    var rotate = projection.rotate();
+    var currentScale = projection.scale();
+
+    // In D3, rotation is [-Long, -Lat]
+    var targetRotate = [-centroid[0], -centroid[1], 0];
+
+    // Create a transition for the projection math
+    d3.transition()
+        .duration(1000)
+        .tween("rotate", function() {
+            var r = d3.interpolate(rotate, targetRotate);
+            var s = d3.interpolate(currentScale, scale || currentScale);
+            return function(t) {
+                projection.rotate(r(t));
+                projection.scale(s(t));
+                path = d3.geoPath().projection(projection); // Recalculate path
+                svg.selectAll("path").attr("d", path);       // Redraw everything
+                
+                // Update distillery points during animation
+                if (typeof updateDistilleryPositions === 'function') {
+                    updateDistilleryPositions();
+                }
+            };
+        });
+}
+
+/**
+ * Zoom to a country and show any connecting routes
+ * Computes appropriate bounds and scale for the view
+ */
+function zoomToCountry(countryFeature) {
+    var countryName = countryFeature.properties && (countryFeature.properties.NAME || countryFeature.properties.name);
+
+    // Collect relevant routes - match by country name or ISO code
+    var relevant = GLOBAL_SHIPPING_DATA.filter(function(r) {
+        if (!r.countries) return false;
+        // Check if this route involves the clicked country
+        return r.countries.some(function(c) {
+            // Match by name or ISO code
+            return c === countryName ||
+                   (countryFeature.properties.ADM0_A3 && c === countryFeature.properties.ADM0_A3);
+        });
+    });
+
+    // Create a feature collection including the country and route lines
+    var feats = [countryFeature];
+    relevant.forEach(function(r) {
+        if (r.path && r.path.length > 0) {
+            feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: r.path } });
+        }
+    });
+
+    var fc = { type: 'FeatureCollection', features: feats };
+
+    // Compute centroid for rotation
+    var centroid = d3.geoCentroid(countryFeature);
+    // Temporarily set projection to target rotation to measure bounds
+    var prevRotate = projection.rotate();
+    var prevScale = projection.scale();
+    var targetRotate = [-centroid[0], -centroid[1], 0];
+    projection.rotate(targetRotate);
+    path = d3.geoPath().projection(projection);
+
+    var b = path.bounds(fc);
+    var dx = Math.max(1, b[1][0] - b[0][0]);
+    var dy = Math.max(1, b[1][1] - b[0][1]);
+
+    // Compute scale factor to fit bounds within viewport with margin
+    var factor = Math.min((width * 0.7) / dx, (height * 0.7) / dy);
+    var desiredScale = Math.max(50, Math.min(prevScale * factor, prevScale * 20));
+
+    // Restore previous rotate/scale before animating
+    projection.rotate(prevRotate);
+    projection.scale(prevScale);
+
+    // Animate to the target rotation and scale
+    rotateTo(centroid, desiredScale);
+
+    // Update displayed routes (show only relevant routes for this country)
+    if (relevant.length > 0) {
+        updateRoutes(relevant);
+    } else {
+        updateRoutes([]);
+    }
+}
+
+/**
+ * Filter routes by year and optionally by selected countries
+ */
+function updateMapByYear(targetYear) {
+    if (targetYear === "ALL") {
+        updateRoutes(GLOBAL_SHIPPING_DATA);
+        return;
+    }
+
+    var targetYearInt = parseInt(targetYear);
+
+    var filteredRoutes = GLOBAL_SHIPPING_DATA.filter(function(r) {
+        return r.year === targetYearInt;
+    });
+
+    // If any countries are selected, further filter by them
+    if (SELECTED_COUNTRIES && SELECTED_COUNTRIES.size > 0) {
+        filteredRoutes = filteredRoutes.filter(function(r) {
+            return r.countries && r.countries.some(function(c) { return SELECTED_COUNTRIES.has(c); });
+        });
+    }
+
+    // Update the displayed year text
+    d3.select("#current-year-display").text("Current Year: " + targetYear);
+
+    if (filteredRoutes.length > 0) {
+        updateRoutes(filteredRoutes);
+    } else {
+        updateRoutes([]);
+    }
+}
+

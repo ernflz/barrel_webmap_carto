@@ -1,0 +1,452 @@
+[
+  {
+    "name": "Aberlour",
+    "region": "Speyside",
+    "location": "Aberlour, Scotland",
+    "coords": [-3.229, 57.466],
+    "website": "https://www.aberlour.com/en/crafting/",
+    "cask_types": ["Sherry", "Bourbon", "American Oak"],
+    "sources": ["ESP", "USA"]
+  },
+  {
+    "name": "The Balvenie",
+    "region": "Speyside",
+    "location": "Dufftown, Scotland",
+    "coords": [-3.125, 57.443],
+    "website": "https://www.thebalvenie.com/our-whisky-collection/cask-finishes/",
+    "cask_types": ["Ex-bourbon", "Sherry", "Carribean Rum", "Pineau", "American Oak", "Porto", "Madeira", "Pedro Ximenez"],
+    "sources": ["USA", "ESP", "JAM", "FRA", "PRT"]
+  },
+  {
+    "name": "BenRiach",
+    "region": "Speyside",
+    "location": "Elgin, Scotland",
+    "coords": [-3.275, 57.618],
+    "website": "https://www.benriachdistillery.com/de-de/unser-prozess/",
+    "cask_types": ["Virgin Oak", "Bourbon", "Rum", "Madeira", "Sherry", "Porto", "Red Wine", "Marsala"],
+    "sources": ["USA", "JAM", "PRT", "ESP", "FRA", "ITA"]
+  },
+  {
+    "name": "Cardhu",
+    "region": "Speyside",
+    "location": "Archiestown, Scotland",
+    "coords": [-3.349, 57.468],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Cragganmore",
+    "region": "Speyside",
+    "location": "Ballindalloch, Scotland",
+    "coords": [-3.393, 57.409],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Craigellachie",
+    "region": "Speyside",
+    "location": "Craigellachie, Scotland",
+    "coords": [-3.187, 57.489],
+    "website": "https://www.craigellachie.com/",
+    "cask_types": ["Sherry", "Bourbon", "Bas-Armagnac"],
+    "sources": ["ESP", "USA", "FRA"]
+  },
+  {
+    "name": "Dalmunach",
+    "region": "Speyside",
+    "location": "Carron, Scotland",
+    "coords": [-3.298, 57.502],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Dufftown",
+    "region": "Speyside",
+    "location": "Dufftown, Scotland",
+    "coords": [-3.129, 57.437],
+    "website": "https://glenfarclas.com/production/",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Glenfarclas",
+    "region": "Speyside",
+    "location": "Ballindalloch, Scotland",
+    "coords": [-3.328, 57.427],
+    "website": "",
+    "cask_types": ["Spanish Sherry (Oloroso)", "Sherry"],
+    "sources": ["ESP"]
+  },
+  {
+    "name": "Glenfiddich",
+    "region": "Speyside",
+    "location": "Dufftown, Scotland",
+    "coords": [-3.128, 57.454],
+    "website": "https://www.glenfiddich.com/en-gb",
+    "cask_types": ["Bourbon", "Carribean Rum", "American Oak", "European Oak", "French Cuvee"],
+    "sources": ["USA", "JAM", "FRA"]
+  },
+  {
+    "name": "The Glenlivet",
+    "region": "Speyside",
+    "location": "Ballindalloch, Scotland",
+    "coords": [-3.336, 57.345],
+    "website": "https://www.theglenlivet.com/en/",
+    "cask_types": ["European Oak", "American Oak", "Carribean Rum", "Tradicional Oak", "French Oak", "Ex-Sherry", "Oloroso", "Cognac", "Port", "Pedro Ximenez", "American White Oak"],
+    "sources": ["USA", "JAM", "FRA", "ESP", "PRT"]
+  },
+  {
+    "name": "Glen Moray",
+    "region": "Speyside",
+    "location": "Elgin, Scotland",
+    "coords": [-3.342, 57.643],
+    "website": "https://www.glenmoray.com/explore-our-collection-whiskies",
+    "cask_types": ["American Oak", "Port", "Oloroso Sherry", "Chardonnay", "Cabernet"],
+    "sources": ["USA", "PRT", "ESP", "FRA"]
+  },
+  {
+    "name": "Glenrothes",
+    "region": "Speyside",
+    "location": "Rothes, Scotland",
+    "coords": [-3.208, 57.518],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "The Macallan",
+    "region": "Speyside",
+    "location": "Craigellachie, Scotland",
+    "coords": [-3.206, 57.484],
+    "website": "https://www.themacallan.com/en/single-malt-scotch-whisky",
+    "cask_types": ["Sherry", "European Oak", "American Oak", "ex-Bourbon"],
+    "sources": ["ESP", "USA"]
+  },
+  {
+    "name": "Mortlach",
+    "region": "Speyside",
+    "location": "Dufftown, Scotland",
+    "coords": [-3.118, 57.439],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Strathisla",
+    "region": "Speyside",
+    "location": "Keith, Scotland",
+    "coords": [-2.955, 57.545],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Aberfeldy",
+    "region": "Highlands",
+    "location": "Aberfeldy, Scotland",
+    "coords": [-3.858, 56.621],
+    "website": "https://www.aberfeldy.com/",
+    "cask_types": ["Sherry", "Bourbon", "French red wine", "Oloroso Sherry"],
+    "sources": ["ESP", "USA", "FRA"]
+  },
+  {
+    "name": "Balblair",
+    "region": "Highlands",
+    "location": "Tain, Scotland",
+    "coords": [-4.184, 57.854],
+    "website": "https://www.balblair.com/collection",
+    "cask_types": ["Ex-Bourbon", "American Oak", "Spanish Oak", "Oloroso"],
+    "sources": ["USA", "ESP"]
+  },
+  {
+    "name": "Blair Athol",
+    "region": "Highlands",
+    "location": "Pitlochry, Scotland",
+    "coords": [-3.725, 56.700],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Clynelish",
+    "region": "Highlands",
+    "location": "Brora, Scotland",
+    "coords": [-3.873, 58.019],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Dalmore",
+    "region": "Highlands",
+    "location": "Alness, Scotland",
+    "coords": [-4.246, 57.696],
+    "website": "https://www.thedalmore.com/en/our-collections/",
+    "cask_types": ["ex-Bourbon", "Calvados", "Port", "Tawny", "Pedro Ximenez", "Bordeaux", "American White Oak", "Madeira", "Marsala", "Cabernet", "Japanese Oak"],
+    "sources": ["USA", "FRA", "PRT", "ESP", "ITA", "JPN"]
+  },
+  {
+    "name": "Dalwhinnie",
+    "region": "Highlands",
+    "location": "Dalwhinnie, Scotland",
+    "coords": [-4.238, 56.940],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Edradour",
+    "region": "Highlands",
+    "location": "Pitlochry, Scotland",
+    "coords": [-3.702, 56.702],
+    "website": "https://www.edradour.com/shop",
+    "cask_types": ["Oloroso Sherry", "Bourbon", "Manzanilla", "Burgundy", "Rum"],
+    "sources": ["ESP", "USA", "FRA", "JAM"]
+  },
+  {
+    "name": "Glendronach",
+    "region": "Highlands",
+    "location": "Forque, Scotland",
+    "coords": [-2.622, 57.508],
+    "website": "https://www.glendronachdistillery.com/de-de/collections/",
+    "cask_types": ["Sherry (Pedro Ximenez, Oloroso)"],
+    "sources": ["ESP"]
+  },
+  {
+    "name": "Glengoyne",
+    "region": "Highlands",
+    "location": "Dumgoyne, Scotland",
+    "coords": [-4.354, 56.007],
+    "website": "https://www.glengoyne.com/shop/our-whisky-collection",
+    "cask_types": ["Sherry", "Mizunara", "Bourbon", "Virgin Oak"],
+    "sources": ["ESP", "JPN", "USA"]
+  },
+  {
+    "name": "Glenmorangie",
+    "region": "Highlands",
+    "location": "Tain, Scotland",
+    "coords": [-4.072, 57.828],
+    "website": "https://www.glenmorangie.com/",
+    "cask_types": ["Pedro Ximenez", "Bourbon", "Calvados", "Port", "Amontillado", "Rye", "Sauternes", "Moscatel", "Tokaji", "Cognac", "Chardonnay", "Madeira"],
+    "sources": ["ESP", "USA", "FRA", "PRT"]
+  },
+  {
+    "name": "Oban",
+    "region": "Highlands",
+    "location": "Oban, Scotland",
+    "coords": [-5.471, 56.415],
+    "website": "https://www.obanwhisky.com/heritage",
+    "cask_types": ["American white oak", "Montanilla Fino Sherry"],
+    "sources": ["USA", "ESP"]
+  },
+  {
+    "name": "Old Pulteney",
+    "region": "Highlands",
+    "location": "Wick, Scotland",
+    "coords": [-3.085, 58.435],
+    "website": "https://oldpulteney.com/whiskies/",
+    "cask_types": ["American Oak", "Ex-bourbon", "Spanish Oak", "French Oak", "Pineau", "Oloroso", "Sherry"],
+    "sources": ["USA", "ESP", "FRA"]
+  },
+  {
+    "name": "Tomatin",
+    "region": "Highlands",
+    "location": "Tomatin, Scotland",
+    "coords": [-4.018, 57.353],
+    "website": "https://tomatin.com/",
+    "cask_types": ["Bourbon", "Oloroso Sherry", "Carribean Rum", "Pedro Ximenez", "Jamaican Rum", "Virgin Oak"],
+    "sources": ["USA", "ESP", "JAM"]
+  },
+  {
+    "name": "Ardbeg",
+    "region": "Islay",
+    "location": "Port Ellen, Scotland",
+    "coords": [-6.111, 55.642],
+    "website": "https://www.ardbeg.com/",
+    "cask_types": ["Ex-Bourbon", "Pedro Ximenez", "Virgin Charred Oak", "Ex-Sherry"],
+    "sources": ["USA", "ESP"]
+  },
+  {
+    "name": "Ardnahoe",
+    "region": "Islay",
+    "location": "Port Askaig, Scotland",
+    "coords": [-6.113, 55.856],
+    "website": "https://ardnahoedistillery.com/pages/online-shop",
+    "cask_types": ["ex-Bourbon", "ex-Oloroso sherry"],
+    "sources": ["USA", "ESP"]
+  },
+  {
+    "name": "Bowmore",
+    "region": "Islay",
+    "location": "Bowmore, Scotland",
+    "coords": [-6.287, 55.758],
+    "website": "https://www.bowmore.com/en-de/",
+    "cask_types": ["Sherry", "Bourbon"],
+    "sources": ["ESP", "USA"]
+  },
+  {
+    "name": "Bruichladdich",
+    "region": "Islay",
+    "location": "Bruichladdich, Scotland",
+    "coords": [-6.363, 55.766],
+    "website": "https://de.bruichladdich.com/collections/bruichladdich",
+    "cask_types": ["Sherry", "Bourbon"],
+    "sources": ["ESP", "USA"]
+  },
+  {
+    "name": "Bunnahabhain",
+    "region": "Islay",
+    "location": "Port Askaig, Scotland",
+    "coords": [-6.126, 55.883],
+    "website": "https://bunnahabhain.com/",
+    "cask_types": ["Oloroso", "Amontillado", "Manzanilla", "Palo Cortado", "Pedro Ximenez"],
+    "sources": ["ESP"]
+  },
+  {
+    "name": "Caol Ila",
+    "region": "Islay",
+    "location": "Port Askaig, Scotland",
+    "coords": [-6.109, 55.852],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Lagavulin",
+    "region": "Islay",
+    "location": "Port Ellen, Scotland",
+    "coords": [-6.126, 55.636],
+    "website": "https://www.malts.com/en-au/articles/lagavulin",
+    "cask_types": ["Ex-sherry", "Ex-bourbon"],
+    "sources": ["ESP", "USA"]
+  },
+  {
+    "name": "Laphroaig",
+    "region": "Islay",
+    "location": "Port Ellen, Scotland",
+    "coords": [-6.152, 55.629],
+    "website": "https://www.laphroaig.com/",
+    "cask_types": ["ex-Bourbon", "Oloroso Sherry"],
+    "sources": ["USA", "ESP"]
+  },
+  {
+    "name": "Arran",
+    "region": "Islands",
+    "location": "Lochranza, Scotland",
+    "coords": [-5.282, 55.705],
+    "website": "https://www.arranwhisky.com/shop-whiskies/arran-single-malts",
+    "cask_types": ["Sherry", "Bourbon", "American Oak", "Port", "Sauternes"],
+    "sources": ["ESP", "USA", "PRT", "FRA"]
+  },
+  {
+    "name": "Auchentoshan",
+    "region": "Lowlands",
+    "location": "Clydebank, Scotland",
+    "coords": [-4.439, 55.922],
+    "website": "https://www.auchentoshan.com/whiskies",
+    "cask_types": ["Bourbon", "Oloroso", "Pedro Ximenez", "Sauvignon Blanc"],
+    "sources": ["USA", "ESP", "FRA"]
+  },
+  {
+    "name": "Talisker",
+    "region": "Islands",
+    "location": "Carbost, Isle of Skye, Scotland",
+    "coords": [-6.356, 57.302],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  },
+  {
+    "name": "Jameson",
+    "region": "Irish",
+    "location": "Midleton, Ireland",
+    "coords": [-8.169, 51.914],
+    "website": "https://www.jamesonwhiskey.com/",
+    "cask_types": ["Bourbon"],
+    "sources": ["USA"]
+  },
+  {
+    "name": "Tullamore D.E.W.",
+    "region": "Irish",
+    "location": "Tullamore, Ireland",
+    "coords": [-7.494, 53.268],
+    "website": "https://www.tullamoredew.com/",
+    "cask_types": ["Bourbon", "Sherry", "Demerara Rum", "Oloroso", "Port", "Madeira"],
+    "sources": ["USA", "ESP", "JAM", "PRT"]
+  },
+  {
+    "name": "Bushmills",
+    "region": "Irish",
+    "location": "Bushmills, Northern Ireland",
+    "coords": [-6.518, 55.201],
+    "website": "https://www.bushmills.eu/whiskeys/",
+    "cask_types": ["Bourbon", "Oloroso Sherry", "Rum", "Marsala", "Malaga", "Port", "Madeira"],
+    "sources": ["USA", "ESP", "JAM", "ITA", "PRT"]
+  },
+  {
+    "name": "Proper No. Twelve",
+    "region": "Irish",
+    "location": "Bushmills, Northern Ireland",
+    "coords": [-6.518, 55.201],
+    "website": "https://www.properwhiskey.com/our-story",
+    "cask_types": ["ex-Bourbon"],
+    "sources": ["USA"]
+  },
+  {
+    "name": "Redbreast",
+    "region": "Irish",
+    "location": "Midleton, Ireland",
+    "coords": [-8.169, 51.914],
+    "website": "https://www.redbreastwhiskey.com/",
+    "cask_types": ["Sherry", "ex-Bourbon"],
+    "sources": ["ESP", "USA"]
+  },
+  {
+    "name": "Teeling Whiskey",
+    "region": "Irish",
+    "location": "Dublin, Ireland",
+    "coords": [-6.277, 53.337],
+    "website": "https://www.teelingwhiskey.com/",
+    "cask_types": ["Rum", "American Red Wine", "Virgin American Oak", "Port", "Madeira", "Bourbon", "Sherry", "Sauternes"],
+    "sources": ["JAM", "USA", "PRT", "ESP", "FRA"]
+  },
+  {
+    "name": "Dingle Distillery",
+    "region": "Irish",
+    "location": "Dingle, Ireland",
+    "coords": [-10.287, 52.141],
+    "website": "https://dingledistillery.ie/",
+    "cask_types": ["Bourbon", "Oloroso", "Pedro Ximenez", "Port", "Red Wine"],
+    "sources": ["USA", "ESP", "PRT", "FRA"]
+  },
+  {
+    "name": "Powerscourt Distillery",
+    "region": "Irish",
+    "location": "Enniskerry, Ireland",
+    "coords": [-6.186, 53.184],
+    "website": "https://powerscourtdistillery.com/",
+    "cask_types": ["ex-bourbon", "new heavy char oak", "Madeira", "Oloroso", "Pedro Ximenez", "Amarone"],
+    "sources": ["USA", "PRT", "ESP", "ITA"]
+  },
+  {
+    "name": "Slane Distillery",
+    "region": "Irish",
+    "location": "Slane, Ireland",
+    "coords": [-6.565, 53.712],
+    "website": "https://www.slaneirishwhiskey.com/",
+    "cask_types": ["Virgin Oak", "ex-Bourbon", "Sherry"],
+    "sources": ["USA", "ESP"]
+  },
+  {
+    "name": "Kilbeggan Distillery",
+    "region": "Irish",
+    "location": "Kilbeggan, Ireland",
+    "coords": [-7.501, 53.337],
+    "website": "",
+    "cask_types": [],
+    "sources": []
+  }
+]

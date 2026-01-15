@@ -4,9 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Where Does the Barrel Roll?🛢️</title>
+    <!-- Favicon with wine glass emoji -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🍷</text></svg>">
     
-    <link rel="stylesheet" href="mp_1.css">
-    
+    <!-- Google Fonts: Lora -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
     
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
@@ -14,29 +20,28 @@
     <div id="main-layout">
         <aside id="legend">
             <div id="legend-header">
-                <div id="tab-buttons">
-                    <button id="tab-legend" class="tab-btn active">Legend & Controls</button>
-                    <button id="tab-controls" class="tab-btn">Country Selection</button>
+                <div class="sidebar-title">
+                    <h1>Where Does the Barrel Roll?🛢️</h1>
+                    <p class="sidebar-desc">This is a placeholder for sidebar information. You can add instructions, context, or any other relevant details here.</p>
                 </div>
-                <button id="sidebar-toggle">Hide</button>
             </div>
             
-            <!-- Legend Tab Content -->
             <div id="tab-legend-content" class="tab-content active">
-                <p>Use the timeline to filter routes by year.</p>
                 <p id="sidebar-note">Click countries to zoom and show routes.</p>
-                <!-- Additional legend items can be populated by `mp_1.js` -->
             </div>
             
-            <!-- Controls Tab Content -->
             <div id="tab-controls-content" class="tab-content">
-                <!-- Country list will be inserted here by mp_1.js -->
-            </div>
+                </div>
         </aside>
 
         <div id="mapContainer"></div>
     </div>
 
-    <script src="mp_1.js"></script>
+    <script src="js/1map_setup.js"></script>
+    <script src="js/2data_manager.js"></script>
+    <script src="js/3layer_logic.js"></script>
+    <script src="js/6distillery_layer.js"></script>
+    <script src="js/4ui_controls.js"></script>
+    <script src="js/5main.js"></script>
 </body>
 </html>

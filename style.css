@@ -1,11 +1,14 @@
-html, body {
-font-size: 18px;
-font-family: 'Segoe UI', sans-serif;
-margin: 0;
-display:flex;
-height: 100%;
-flex-direction: row ;
-overflow: hidden;
+html,
+body {
+    font-size: 18px;
+    font-family: 'Lora', serif;
+    margin: 0;
+    display: flex;
+    height: 100%;
+    width: 100%;
+    flex-direction: row;
+    overflow: hidden;
+    background-color: #6c695e;
 }
 
 #main-layout {
@@ -14,15 +17,15 @@ overflow: hidden;
     width: 100vw;
 }
 
+/* =========================================================================== */
+/* SIDEBAR & LEGEND STYLING                                                  */
+/* =========================================================================== */
 
-/* Legend styling */
 #legend {
     width: 30%;
     min-width: 300px;
     padding: 20px;
     background-color: #c1c0c0;
-    opacity: 1;
-    border: none;
     border-right: 5px solid gray;
     z-index: 10;
     display: flex;
@@ -33,8 +36,28 @@ overflow: hidden;
 
 #legend-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.sidebar-title h1 {
+    font-size: 1.6em;
+    margin: 0 0 0.3em 0;
+    color: #333;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-desc {
+    font-size: 1em;
+    color: #555;
+    margin: 0 0 0.5em 0;
+    line-height: 1.4;
+}
+
+#tab-buttons {
+    display: flex;
     gap: 10px;
     margin-bottom: 12px;
     flex-wrap: wrap;
@@ -71,9 +94,9 @@ overflow: hidden;
 
 .tab-content {
     display: none;
-    animation: fadeIn 0.2s ease;
     overflow-y: auto;
     flex: 1;
+    animation: fadeIn 0.2s ease;
 }
 
 .tab-content.active {
@@ -92,11 +115,13 @@ overflow: hidden;
     padding: 6px 10px;
     border-radius: 4px;
     cursor: pointer;
+    transition: opacity 0.2s;
 }
 
-#sidebar-toggle:hover { opacity: 0.9; }
+#sidebar-toggle:hover {
+    opacity: 0.9;
+}
 
-/* Floating show button that appears when sidebar is hidden */
 .sidebar-show-button,
 #sidebar-show {
     position: fixed;
@@ -109,137 +134,110 @@ overflow: hidden;
     padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.2s;
 }
 
-.sidebar-show-button:hover { opacity: 0.9; }
+.sidebar-show-button:hover {
+    opacity: 0.9;
+}
 
-/* Spinner overlay while building routes */
-/* Spinner overlay removed */
 
+
+/* =========================================================================== */
+/* MAP CONTAINER & VISUALIZATION                                             */
+/* =========================================================================== */
 
 #mapContainer {
-    flex-grow: 1;
+    flex: 1;
     position: relative;
     height: 100%;
-    background: #000000;
+    width: 100%;
+    background: #847961;
+    overflow: hidden;
 }
 
-/* LAYER STYLES */
+#mapContainer svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* =========================================================================== */
+/* MAP LAYER STYLES                                                           */
+/* =========================================================================== */
+
 .graticule {
     fill: none;
-    stroke: #ffffff;
+    stroke: #fff;
     stroke-width: 0.5px;
     stroke-opacity: 0.3;
 }
 
 .country {
-    fill: #fff3e6;       /* Slight warm/orange tint for land */
-    
-    /* Make country borders more prominent */
-    stroke: #b36b00;     /* Warm brown for borders */
-    stroke-width: 1px; /* Thicker border */
+    fill: #ada096;
+    stroke: #574c3b;
+    stroke-width: 1px;
+}
+
+.country:hover {
+    fill: #7d3518;
+    stroke: #fff;
+    stroke-width: 1px;
+    cursor: pointer;
 }
 
 .lake {
-    fill: none;       /* Match Ocean Color */
-    stroke: #7ea6c8;     /* Softer blue */
+    fill: none;
+    stroke: #7ea6c8;
     stroke-width: 0.2px;
     stroke-opacity: 0.55;
 }
 
 .river {
     fill: none;
-    stroke: #6394be;     /* Softer river blue */
+    stroke: #124c7f;
     stroke-width: 0.25px;
     stroke-opacity: 0.65;
 }
 
 .coastline {
     fill: none;
-    stroke: #8a8a8a;     /* Dark Grey for sharp edges */
+    stroke: #8a8a8a;
     stroke-width: 0.5px;
 }
 
-/* ... existing styles ... */
+/* =========================================================================== */
+/* SHIPPING ROUTES & INTERACTIONS                                             */
+/* =========================================================================== */
 
-/* TOOLTIP STYLING */
+.shipping-route:hover {
+    stroke-width: 6px !important;
+    stroke: #d17373 !important;
+    cursor: pointer;
+    filter: drop-shadow(0 0 5px #fff);
+}
+
 .tooltip {
     position: absolute;
     text-align: left;
     padding: 10px;
     font-family: sans-serif;
     font-size: 12px;
-    background: rgba(0, 0, 0, 0.8); /* Dark semi-transparent background */
+    background: rgba(0, 0, 0, 0.8);
     color: #fff;
     border: 1px solid #fff;
     border-radius: 4px;
-    pointer-events: none; /* Let mouse pass through so it doesn't block map */
-    opacity: 0;           /* Hidden by default */
+    pointer-events: none;
+    opacity: 0;
     transition: opacity 0.2s;
-    box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
     z-index: 1000;
 }
-.tooltip {
-  position: absolute;
-  text-align: center;
-  width: auto;
-  height: auto;
-  padding: 10px;
-  font: 12px sans-serif;
-  background: black;
-  color: white;
-  border: 0px;
-  border-radius: 8px;
-  pointer-events: none;
-  opacity: 0;
-}
-body {
-    background-color: #333; /* Dark background to see map and timeline */
-}
-/* Highlight Hovered Country */
-.country:hover {
-    fill: #ffcc00 !important; /* Bright Yellow */
-    stroke: white;
-    stroke-width: 1px;
-    cursor: pointer;
-}
 
-/* Highlight Hovered Route */
-.shipping-route:hover {
-    stroke-width: 6px !important;
-    stroke: #fff !important; /* Turn white on hover */
-    cursor: pointer;
-    filter: drop-shadow(0 0 5px white); /* Glowing effect */
-}
-
-/* Sketch styling for the multi-stroke effect */
-.shipping-route.primary {
-    mix-blend-mode: multiply;
-}
-.shipping-route.sketch {
-    mix-blend-mode: lighten;
-}
-
-/* Country list in the sidebar (bottom-left) */
-#sidebar-content { position: relative; }
-
-/* Floating country list: fixed to bottom-left of the viewport */
-#country-list {
-    position: fixed;
-    bottom: 12px;
-    left: 12px;
-    width: 340px;
-    max-height: 420px;
-    background: rgba(255,255,255,0.99);
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    z-index: 20000;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ddd;
-}
+/* =========================================================================== */
+/* COUNTRY SELECTION UI                                                       */
+/* =========================================================================== */
 
 .country-items-container {
     overflow-y: auto;
@@ -270,16 +268,16 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 6px;
+    padding: 6px;
     font-size: 13px;
     color: #222;
     border-radius: 4px;
     transition: background-color 0.15s ease;
+    cursor: pointer;
 }
 
 .country-item:hover {
-    background: rgba(0,122,204,0.08);
-    cursor: pointer;
+    background: rgba(0, 122, 204, 0.08);
 }
 
 .country-checkbox {
@@ -303,13 +301,13 @@ body {
 .country-search:focus {
     outline: none;
     border-color: #007acc !important;
-    box-shadow: 0 0 0 2px rgba(0,122,204,0.1);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.1);
 }
 
 .country-btn {
     flex: 1;
     background: #007acc;
-    color: white;
+    color: #fff;
     border: none;
     padding: 6px 10px;
     border-radius: 4px;
