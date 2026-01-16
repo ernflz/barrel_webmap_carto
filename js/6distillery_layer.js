@@ -35,6 +35,35 @@ function getStatsContainer() {
     return container;
 }
 
+// Normalize a cask label and check if it matches a target (with aliases)
+function matchesCaskToTarget(caskName, targetLower) {
+    var cLower = (caskName || '').toLowerCase();
+    var aliasMap = {
+        'sherry': ['sherry', 'oloroso', 'pedro ximenez', 'px', 'ex-sherry', 'spanish sherry'],
+        'port': ['port', 'porto', 'port wine', 'tawny', 'ruby port'],
+        'madeira': ['madeira'],
+        'wine': ['red wine', 'white wine']
+    };
+
+    var candidates = aliasMap[targetLower] || [targetLower];
+    return candidates.some(function(alias) {
+        return cLower.indexOf(alias) !== -1;
+    });
+}
+
+function findDistilleriesByCask(caskName, useFuzzyMatch) {
+    var target = (caskName || '').trim().toLowerCase();
+    if (!target || !window.GLOBAL_DISTILLERIES) return [];
+
+    return window.GLOBAL_DISTILLERIES.filter(function(d) {
+        if (!d.cask_types || !d.cask_types.length) return false;
+        return d.cask_types.some(function(c) {
+            if (useFuzzyMatch) return matchesCaskToTarget(c, target);
+            return c && c.trim().toLowerCase() === target;
+        });
+    });
+}
+
 function showCaskStatistics() {
     var container = getStatsContainer();
     
@@ -81,25 +110,25 @@ function showCaskStatistics() {
     });
 }
 
-function filterDistilleriesByCask(caskName) {
-    // Find matching distilleries
-    var matches = window.GLOBAL_DISTILLERIES.filter(d => 
-        d.cask_types && d.cask_types.some(c => c.trim() === caskName)
-    );
+function filterDistilleriesByCask(caskName, options) {
+    var opts = options || {};
+    var matches = findDistilleriesByCask(caskName, !!opts.fuzzyMatch);
 
     // Update Sidebar
     var container = getStatsContainer();
+    var title = opts.customTitle || (caskName + ' Casks');
+    var intro = opts.customIntro || ('Used by <strong>' + matches.length + '</strong> distilleries:');
     
     var html = `
         <div style="margin-bottom:10px; cursor:pointer; color:#d4af37;" id="back-to-stats">← Back to Statistics</div>
-        <h2>${caskName} Casks</h2>
-        <p>Used by <strong>${matches.length}</strong> distilleries:</p>
+        <h2>${title}</h2>
+        <p>${intro}</p>
         <ul style="max-height: 400px; overflow-y: auto;">
-            ${matches.map(d => `
-                <li style="margin-bottom:5px; cursor:pointer;" class="distillery-link" data-name="${d.name.replace(/"/g, '&quot;')}">
+            ${matches.length ? matches.map(d => `
+                <li style="margin-bottom:5px; cursor:pointer;" class="distillery-link" data-name="${d.name.replace(/"/g, '&quot;')}" data-region="${(d.region || '').replace(/"/g, '&quot;')}">
                     <strong>${d.name}</strong> (${d.region})
                 </li>
-            `).join('')}
+            `).join('') : '<li style="color:#666;">No distilleries found for this cask type.</li>'}
         </ul>
     `;
     
@@ -140,14 +169,31 @@ function filterDistilleriesByCask(caskName) {
     highlightDistilleries(matches.map(d => d.name));
 }
 
+function highlightDistilleriesForWineRegion(regionName) {
+    var regionLabel = regionName || 'Wine Region';
+    filterDistilleriesByCask(regionLabel, {
+        fuzzyMatch: true,
+        customTitle: regionLabel + ' wine region casks'
+    });
+}
+
 function highlightDistilleries(names) {
+    if (!names || !names.length) {
+        d3.selectAll('.distillery-point')
+            .transition().duration(300)
+            .attr('opacity', 0.9)
+            .attr('r', 3.5)
+            .attr('fill', '#d4af37');
+        return;
+    }
+
     var nameSet = new Set(names);
     
     d3.selectAll('.distillery-point')
         .transition().duration(300)
-        .attr('opacity', d => nameSet.has(d.name) ? 1 : 0.1)
-        .attr('r', d => nameSet.has(d.name) ? 6 : 3.5)
-        .attr('fill', d => nameSet.has(d.name) ? '#FF4500' : '#d4af37'); // Orange-Red for selection
+        .attr('opacity', function(d) { return nameSet.has(d.name) ? 1 : 0.1; })
+        .attr('r', function(d) { return nameSet.has(d.name) ? 6 : 3.5; })
+        .attr('fill', function(d) { return nameSet.has(d.name) ? '#FF4500' : '#d4af37'; }); // Orange-Red for selection
 }
 
 function drawDistilleries() {

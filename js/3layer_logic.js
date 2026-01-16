@@ -131,6 +131,13 @@ function drawLayers(countries, lakes, rivers, wineRegions) {
         .on("mouseout", function() {
             d3.select(this).attr("stroke-width", 1.5).attr("stroke", "#8B4513");
             tooltip.transition().duration(500).style("opacity", 0);
+        })
+        .on("click", function(event, d) {
+            event.stopPropagation();
+            var regionName = d.properties.Region || "Wine Region";
+            if (typeof highlightDistilleriesForWineRegion === 'function') {
+                highlightDistilleriesForWineRegion(regionName);
+            }
         });
 
     // ========================================================================
