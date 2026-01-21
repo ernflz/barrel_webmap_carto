@@ -13,7 +13,7 @@ Promise.all([
     d3.dsv(";", "data/flows/ports.csv"),
     d3.json("data/flows/shipping_routes.json"),
     d3.json("data/trade_data/distilleries.json"),
-    d3.json("data/basemap/wineregions.json")
+    d3.json("data/basemap/wineregionseurope.json")
 ]).then(function(files) {
 
     var countries = files[0];

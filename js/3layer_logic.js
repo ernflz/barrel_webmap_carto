@@ -115,7 +115,7 @@ function drawLayers(countries, lakes, rivers, wineRegions) {
         .attr("d", path)
         .attr("fill", "none")
         .attr("stroke", "#8B4513")
-        .attr("stroke-width", 1.5)
+        .attr("stroke-width", 3)
         .on("mouseover", function(event, d) {
             d3.select(this).attr("stroke-width", 2.5).attr("stroke", "#D2691E");
             tooltip.transition().duration(200).style("opacity", 1);
@@ -129,7 +129,7 @@ function drawLayers(countries, lakes, rivers, wineRegions) {
                 .style("top", (event.pageY - 28) + "px");
         })
         .on("mouseout", function() {
-            d3.select(this).attr("stroke-width", 1.5).attr("stroke", "#8B4513");
+            d3.select(this).attr("stroke-width", 3).attr("stroke", "#8B4513");
             tooltip.transition().duration(500).style("opacity", 0);
         })
         .on("click", function(event, d) {
