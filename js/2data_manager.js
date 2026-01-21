@@ -4,7 +4,6 @@
 
 Promise.all([
     d3.json("data/basemap/ne_10m_admin_0_countries.json"),
-    d3.json("data/basemap/ne_10m_rivers_lake_centerlines.json"),
     d3.json("data/basemap/ne_10m_lakes.json"),
     d3.json("data/basemap/ne_10m_coastline.json"),
     d3.json("data/basemap/ne_10m_ports.json"),
@@ -17,15 +16,14 @@ Promise.all([
 ]).then(function(files) {
 
     var countries = files[0];
-    var rivers = files[1];
-    var lakes = files[2];
-    var coastlines = files[3];
-    var portsGeo = files[4];
-    var tradeData = files[5];
-    var portData = files[6];
-    var shippingRoutesFile = files[7];
-    var distilleryData = files[8];
-    var wineRegions = files[9];
+    var lakes = files[1];
+    var coastlines = files[2];
+    var portsGeo = files[3];
+    var tradeData = files[4];
+    var portData = files[5];
+    var shippingRoutesFile = files[6];
+    var distilleryData = files[7];
+    var wineRegions = files[8];
 
     // ========================================================================
     // STEP 1: INITIALIZE YEAR TIMELINE & COUNTRY MAPPING
@@ -125,7 +123,7 @@ Promise.all([
     // ========================================================================
 
     // Draw all map layers
-    drawLayers(countries, lakes, rivers, wineRegions);
+    drawLayers(countries, lakes, wineRegions);
 
     // Build and display the countries with routes list in the sidebar
     buildCountriesWithRoutesList();

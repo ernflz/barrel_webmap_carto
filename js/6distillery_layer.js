@@ -2,6 +2,81 @@
 // DISTILLERY LAYER & CASK SOURCING VISUALIZATION
 // ============================================================================
 
+// Map cask types to their country flag emoji
+function getCaskProvenance(caskName) {
+    var lower = (caskName || '').toLowerCase();
+    
+    // Spain - Sherry variants
+    if (lower.includes('sherry') || lower.includes('oloroso') || lower.includes('pedro ximenez') || 
+        lower.includes('px') || lower.includes('amontillado') || lower.includes('manzanilla') || 
+        lower.includes('palo cortado') || lower.includes('montanilla') || lower.includes('malaga') || 
+        lower.includes('moscatel')) {
+        return '🇪🇸';
+    }
+    
+    // USA - Bourbon and American Oak
+    if (lower.includes('bourbon') || lower.includes('american oak') || lower.includes('american white oak') || 
+        lower.includes('rye') || lower.includes('virgin oak') || lower.includes('charred oak')) {
+        return '🇺🇸';
+    }
+    
+    // France - Wine regions and spirits
+    if (lower.includes('bordeaux') || lower.includes('burgundy') || lower.includes('sauternes') || 
+        lower.includes('pineau') || lower.includes('cognac') || lower.includes('calvados') || 
+        lower.includes('chardonnay') || lower.includes('cabernet') || lower.includes('sauvignon') || 
+        lower.includes('cuvee') || lower.includes('armagnac') || lower.includes('bas-armagnac') || 
+        lower.includes('champagne')) {
+        return '🇫🇷';
+    }
+    
+    // Portugal - Port and Madeira
+    if (lower.includes('port') || lower.includes('porto') || lower.includes('tawny') || 
+        lower.includes('madeira') || lower.includes('ruby')) {
+        return '🇵🇹';
+    }
+    
+    // Jamaica/Caribbean - Rum
+    if (lower.includes('rum') || lower.includes('caribbean') || lower.includes('jamaican') || 
+        lower.includes('demerara')) {
+        return '🇯🇲';
+    }
+    
+    // Italy - Italian wines and spirits
+    if (lower.includes('marsala') || lower.includes('amarone')) {
+        return '🇮🇹';
+    }
+    
+    // Japan - Japanese Oak
+    if (lower.includes('mizunara') || lower.includes('japanese oak')) {
+        return '🇯🇵';
+    }
+    
+    // Hungary - Tokaji
+    if (lower.includes('tokaji')) {
+        return '🇭🇺';
+    }
+    
+    // Generic Oak (origin varies)
+    if (lower.includes('european oak') || lower.includes('spanish oak') || lower.includes('french oak')) {
+        if (lower.includes('spanish')) return '🇪🇸';
+        if (lower.includes('french')) return '🇫🇷';
+        return '🇪🇺';
+    }
+    
+    // Generic categories
+    if (lower.includes('red wine') || lower.includes('white wine')) {
+        return '🌍';
+    }
+    
+    return null; // Unknown origin
+}
+
+// Format cask name with provenance
+function formatCaskWithProvenance(caskName) {
+    var provenance = getCaskProvenance(caskName);
+    return provenance ? caskName + ' (' + provenance + ')' : caskName;
+}
+
 function initDistilleryLayer() {
     if (!window.GLOBAL_DISTILLERIES) return;
 
@@ -42,13 +117,40 @@ function matchesCaskToTarget(caskName, targetLower) {
         'sherry': ['sherry', 'oloroso', 'pedro ximenez', 'px', 'ex-sherry', 'spanish sherry'],
         'port': ['port', 'porto', 'port wine', 'tawny', 'ruby port'],
         'madeira': ['madeira'],
-        'wine': ['red wine', 'white wine']
+        'wine': ['red wine', 'white wine'],
+        // Group all French wine-related casks under Bordeaux
+        'bordeaux': [
+            'bordeaux',
+            'burgundy',
+            'sauternes',
+            'pineau',
+            'chardonnay',
+            'cabernet',
+            'sauvignon blanc',
+            'cuvee'
+        ]
     };
 
     var candidates = aliasMap[targetLower] || [targetLower];
     return candidates.some(function(alias) {
         return cLower.indexOf(alias) !== -1;
     });
+}
+
+// Return true if the cask is a French wine type to be grouped as Bordeaux
+function isFrenchWineCask(name) {
+    var lower = (name || '').toLowerCase();
+    var frenchWineTerms = [
+        'bordeaux',
+        'burgundy',
+        'sauternes',
+        'pineau',
+        'chardonnay',
+        'cabernet',
+        'sauvignon blanc',
+        'cuvee'
+    ];
+    return frenchWineTerms.some(function(term) { return lower.indexOf(term) !== -1; });
 }
 
 function findDistilleriesByCask(caskName, useFuzzyMatch) {
@@ -74,7 +176,9 @@ function showCaskStatistics() {
         d.cask_types.forEach(cask => {
             // Clean up name (basic normalization)
             var name = cask.trim();
-            caskCounts[name] = (caskCounts[name] || 0) + 1;
+            // Group French wine casks under a single category without changing source data
+            var displayName = isFrenchWineCask(name) ? 'Bordeaux' : name;
+            caskCounts[displayName] = (caskCounts[displayName] || 0) + 1;
         });
     });
 
@@ -89,9 +193,10 @@ function showCaskStatistics() {
         <p>Most used cask types across all distilleries:</p>
         <div class="stats-list">
             ${sortedCasks.map((item, index) => {
+                var displayName = formatCaskWithProvenance(item[0]);
                 return `
                 <div class="stat-item" data-cask="${item[0].replace(/"/g, '&quot;')}" style="cursor:pointer; padding:5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                    <span>${index + 1}. ${item[0]}</span>
+                    <span>${index + 1}. ${displayName}</span>
                     <span style="font-weight:bold;">${item[1]}</span>
                 </div>`;
             }).join('')}
@@ -106,22 +211,33 @@ function showCaskStatistics() {
     // 3. Add Interaction
     container.selectAll('.stat-item').on('click', function() {
         var caskName = this.getAttribute('data-cask');
-        filterDistilleriesByCask(caskName);
+        // Use fuzzy matching when clicking the grouped Bordeaux category
+        var useFuzzy = (caskName || '').toLowerCase() === 'bordeaux';
+        filterDistilleriesByCask(caskName, { fuzzyMatch: useFuzzy });
     });
 }
 
 function filterDistilleriesByCask(caskName, options) {
     var opts = options || {};
-    var matches = findDistilleriesByCask(caskName, !!opts.fuzzyMatch);
+    // Ensure fuzzy matching is enabled for grouped categories like Bordeaux
+    var useFuzzy = !!opts.fuzzyMatch || ((caskName || '').toLowerCase() === 'bordeaux');
+    var matches = findDistilleriesByCask(caskName, useFuzzy);
 
     // Update Sidebar
     var container = getStatsContainer();
     var title = opts.customTitle || (caskName + ' Casks');
     var intro = opts.customIntro || ('Used by <strong>' + matches.length + '</strong> distilleries:');
     
+    var displayTitle = title;
+    // Add provenance to title if it's a single cask type
+    if (!opts.customTitle && caskName) {
+        var provenance = getCaskProvenance(caskName);
+        displayTitle = provenance ? caskName + ' (' + provenance + ') Casks' : title;
+    }
+    
     var html = `
         <div style="margin-bottom:10px; cursor:pointer; color:#d4af37;" id="back-to-stats">← Back to Statistics</div>
-        <h2>${title}</h2>
+        <h2>${displayTitle}</h2>
         <p>${intro}</p>
         <ul style="max-height: 400px; overflow-y: auto;">
             ${matches.length ? matches.map(d => `
@@ -356,7 +472,7 @@ function showDistilleryInfo(d) {
         <h3>Cask Sourcing</h3>
         <p>This distillery sources casks from:</p>
         <ul>
-            ${d.cask_types.map(c => `<li>${c}</li>`).join('')}
+            ${d.cask_types.map(c => `<li>${formatCaskWithProvenance(c)}</li>`).join('')}
         </ul>
         <p><strong>Source Countries:</strong> ${d.sources.map(s => {
             return (window.ISO_TO_COUNTRY && window.ISO_TO_COUNTRY[s]) || s;

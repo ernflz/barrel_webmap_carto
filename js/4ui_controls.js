@@ -20,7 +20,6 @@ var drag = d3.drag()
         // Hide non-essential layers for performance during drag
         svg.selectAll(".graticule").style("opacity", 0);
         svg.selectAll(".lake").style("opacity", 0);
-        svg.selectAll(".river").style("opacity", 0);
         svg.selectAll(".distillery-point").style("opacity", 0);
         svg.selectAll(".port").style("opacity", 0);
     })
@@ -59,12 +58,14 @@ var drag = d3.drag()
             // Fade layers back in
             svg.selectAll(".graticule").transition().duration(200).style("opacity", 1);
             svg.selectAll(".lake").transition().duration(200).style("opacity", 1);
-            svg.selectAll(".river").transition().duration(200).style("opacity", 1);
             svg.selectAll(".distillery-point").transition().duration(200).style("opacity", 1);
             svg.selectAll(".port").transition().duration(200).style("opacity", 1);
             
             // Update distillery positions after drag completes
             if (typeof updateDistilleryPositions === 'function') updateDistilleryPositions();
+            
+            // Update zoom-dependent layer visibility
+            if (typeof updateZoomDependentLayers === 'function') updateZoomDependentLayers();
         }, 150);
     });
 
@@ -75,7 +76,8 @@ var isZooming = false;
 var zoomEndTimer = null;
 
 var zoom = d3.zoom()
-    .scaleExtent([initialScale * 0.25, initialScale * 4])
+    // Allow deeper zoom while keeping a reasonable minimum
+    .scaleExtent([initialScale * 0.25, initialScale * 8])
     .on("start", function(event) {
         isZooming = true;
         if (zoomEndTimer) clearTimeout(zoomEndTimer);
@@ -83,7 +85,6 @@ var zoom = d3.zoom()
         // Hide non-essential layers for performance during zoom
         svg.selectAll(".graticule").style("opacity", 0);
         svg.selectAll(".lake").style("opacity", 0);
-        svg.selectAll(".river").style("opacity", 0);
         svg.selectAll(".distillery-point").style("opacity", 0);
         svg.selectAll(".port").style("opacity", 0);
     })
@@ -119,12 +120,14 @@ var zoom = d3.zoom()
             // Fade layers back in
             svg.selectAll(".graticule").transition().duration(200).style("opacity", 1);
             svg.selectAll(".lake").transition().duration(200).style("opacity", 1);
-            svg.selectAll(".river").transition().duration(200).style("opacity", 1);
             svg.selectAll(".distillery-point").transition().duration(200).style("opacity", 1);
             svg.selectAll(".port").transition().duration(200).style("opacity", 1);
             
             // Update distillery positions after zoom completes
             if (typeof updateDistilleryPositions === 'function') updateDistilleryPositions();
+            
+            // Update zoom-dependent layer visibility
+            if (typeof updateZoomDependentLayers === 'function') updateZoomDependentLayers();
         }, 150);
     });
 
@@ -532,8 +535,10 @@ updateSliderPosition(initialYear, x);
  * Build and display the list of countries with routes as an interactive dropdown with checkboxes
  */
 function buildCountriesWithRoutesList() {
-    var container = document.getElementById('tab-legend-content');
-    if (!container) return;
+    // Insert after the sidebar description paragraph if available
+    var sidebarPara = document.querySelector('#legend .sidebar-desc');
+    var insertParent = sidebarPara ? sidebarPara.parentNode : document.getElementById('tab-legend-content');
+    if (!insertParent) return;
 
     // Extract unique country codes from shipping data
     var countrySet = new Set();
@@ -547,8 +552,8 @@ function buildCountriesWithRoutesList() {
 
     var countriesArr = Array.from(countrySet).sort();
 
-    // Remove existing list if present
-    var existing = container.querySelector('.countries-routes-list');
+    // Remove existing list if present (search globally to avoid duplicates)
+    var existing = document.querySelector('.countries-routes-list');
     if (existing) existing.remove();
 
     var listDiv = document.createElement('div');
@@ -748,7 +753,12 @@ function buildCountriesWithRoutesList() {
         }
     });
 
-    container.appendChild(listDiv);
+    // Place the list right after the sidebar text if present, otherwise append to fallback container
+    if (sidebarPara) {
+        insertParent.insertBefore(listDiv, sidebarPara.nextSibling);
+    } else {
+        insertParent.appendChild(listDiv);
+    }
     window.COUNTRY_CHECKBOXES = countryCheckboxes;
 }
 

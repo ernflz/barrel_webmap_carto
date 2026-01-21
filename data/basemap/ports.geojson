@@ -1,0 +1,4 @@
+{
+  "type" : "FeatureCollection",
+  "features" : [{"type":"Feature","id":12,"geometry":{"type":"Point","coordinates":[-76.75728037750153,17.973666067171273]},"properties":{"OBJECTID":12,"Name":"Kingston"}}]
+}

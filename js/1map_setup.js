@@ -40,6 +40,31 @@ var projection = d3.geoOrthographic()
     .clipAngle(90);
 var path = d3.geoPath().projection(projection);
 
+// Zoom thresholds for showing detailed layers
+var ZOOM_THRESHOLD_DISTILLERIES = initialScale * 3.0; // Show distilleries at 3x zoom
+var ZOOM_THRESHOLD_WINE_REGIONS = initialScale * 2.5; // Show wine regions at 2.5x zoom
+
+/**
+ * Update visibility of zoom-dependent layers based on current scale
+ */
+function updateZoomDependentLayers() {
+    var currentScale = projection.scale();
+    
+    // Show/hide wine regions based on zoom level
+    if (currentScale >= ZOOM_THRESHOLD_WINE_REGIONS) {
+        svg.selectAll('.wine-region').style('display', 'block');
+    } else {
+        svg.selectAll('.wine-region').style('display', 'none');
+    }
+    
+    // Show/hide distilleries based on zoom level
+    if (currentScale >= ZOOM_THRESHOLD_DISTILLERIES) {
+        svg.selectAll('.distillery-point').style('display', 'block');
+    } else {
+        svg.selectAll('.distillery-point').style('display', 'none');
+    }
+}
+
 // ============================================================================
 // WINDOW RESIZE HANDLER
 // ============================================================================
@@ -54,7 +79,12 @@ window.addEventListener('resize', function() {
 
     // Update projection scale and translation
     var newScale = height / 2.5;
+    initialScale = newScale;
     projection.scale(newScale).translate([width / 2, height / 2]);
+    
+    // Recalculate zoom thresholds
+    ZOOM_THRESHOLD_DISTILLERIES = initialScale * 3.0;
+    ZOOM_THRESHOLD_WINE_REGIONS = initialScale * 2.5;
 
     // Recalculate path and redraw all elements
     path = d3.geoPath().projection(projection);
@@ -63,6 +93,11 @@ window.addEventListener('resize', function() {
     // Update distillery points
     if (typeof updateDistilleryPositions === 'function') {
         updateDistilleryPositions();
+    }
+    
+    // Update zoom-dependent layer visibility
+    if (typeof updateZoomDependentLayers === 'function') {
+        updateZoomDependentLayers();
     }
 });
 

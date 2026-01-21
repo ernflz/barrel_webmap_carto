@@ -5,7 +5,7 @@
 /**
  * Initialize and draw all map layers (ocean, grid, countries, water bodies, routes)
  */
-function drawLayers(countries, lakes, rivers, wineRegions) {
+function drawLayers(countries, lakes, wineRegions) {
     // ========================================================================
     // LAYER 1: OCEAN BACKGROUND
     // ========================================================================
@@ -101,7 +101,6 @@ function drawLayers(countries, lakes, rivers, wineRegions) {
     // ========================================================================
 
     svg.selectAll(".lake").data(lakes.features).enter().append("path").attr("class", "lake").attr("d", path);
-    svg.selectAll(".river").data(rivers.features).enter().append("path").attr("class", "river").attr("d", path);
 
     // ========================================================================
     // LAYER 5: WINE REGIONS
@@ -115,7 +114,8 @@ function drawLayers(countries, lakes, rivers, wineRegions) {
         .attr("d", path)
         .attr("fill", "none")
         .attr("stroke", "#8B4513")
-        .attr("stroke-width", 3)
+        .attr("stroke-width", 1.5)
+        .style("display", "none") // Initially hidden, will show on zoom
         .on("mouseover", function(event, d) {
             d3.select(this).attr("stroke-width", 2.5).attr("stroke", "#D2691E");
             tooltip.transition().duration(200).style("opacity", 1);
@@ -129,7 +129,7 @@ function drawLayers(countries, lakes, rivers, wineRegions) {
                 .style("top", (event.pageY - 28) + "px");
         })
         .on("mouseout", function() {
-            d3.select(this).attr("stroke-width", 3).attr("stroke", "#8B4513");
+            d3.select(this).attr("stroke-width", 1.5).attr("stroke", "#8B4513");
             tooltip.transition().duration(500).style("opacity", 0);
         })
         .on("click", function(event, d) {
@@ -150,4 +150,9 @@ function drawLayers(countries, lakes, rivers, wineRegions) {
 
     // Build country selection list after data is loaded
     buildCountryList(countries);
+    
+    // Set initial visibility for zoom-dependent layers
+    if (typeof updateZoomDependentLayers === 'function') {
+        updateZoomDependentLayers();
+    }
 }
