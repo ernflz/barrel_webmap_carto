@@ -25,6 +25,33 @@ Promise.all([
     var distilleryData = files[7];
     var wineRegions = files[8];
 
+    // Store wine regions globally for zoom functionality
+    window.WINE_REGIONS_GEOJSON = wineRegions;
+    // Store ports (CSV) globally and prepare GeoJSON Point features
+    window.PORT_DATA = portData;
+    window.PORT_FEATURES = Array.isArray(portData) ? portData.map(function(d) {
+        return {
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [parseFloat(d.Longitude), parseFloat(d.Latitude)]
+            },
+            properties: {
+                name: d.Port_Name,
+                iso: d.ISO_Code
+            }
+        };
+    }) : [];
+
+    // Fix geometry orientation for wine regions (same as countries)
+    if (wineRegions && wineRegions.features) {
+        wineRegions.features.forEach(function(f) {
+            if (!f.geometry) return;
+            if (f.geometry.type === "Polygon") f.geometry.coordinates.forEach(r => r.reverse());
+            if (f.geometry.type === "MultiPolygon") f.geometry.coordinates.forEach(p => p.forEach(r => r.reverse()));
+        });
+    }
+
     // ========================================================================
     // STEP 1: INITIALIZE YEAR TIMELINE & COUNTRY MAPPING
     // ========================================================================
@@ -123,13 +150,28 @@ Promise.all([
     // ========================================================================
 
     // Draw all map layers
-    drawLayers(countries, lakes, wineRegions);
+    drawLayers(countries, lakes, wineRegions, window.PORT_FEATURES);
 
     // Build and display the countries with routes list in the sidebar
     buildCountriesWithRoutesList();
 
     // Initialize Distillery Layer
     if (typeof initDistilleryLayer === 'function') initDistilleryLayer();
+
+    // ========================================================================
+    // STEP 5: ADD WINE REGION DROPDOWN EVENT LISTENER
+    // ========================================================================
+    
+    var wineRegionDropdown = document.getElementById('wine-region-dropdown');
+    if (wineRegionDropdown && typeof zoomToWineRegion === 'function') {
+        wineRegionDropdown.addEventListener('change', function(e) {
+            var selectedRegion = e.target.value;
+            if (selectedRegion) {
+                console.log("Selected wine region:", selectedRegion);
+                zoomToWineRegion(selectedRegion);
+            }
+        });
+    }
 
 }).catch(function(error) {
     console.error("Error loading data:", error);

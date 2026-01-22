@@ -43,6 +43,7 @@ var path = d3.geoPath().projection(projection);
 // Zoom thresholds for showing detailed layers
 var ZOOM_THRESHOLD_DISTILLERIES = initialScale * 3.0; // Show distilleries at 3x zoom
 var ZOOM_THRESHOLD_WINE_REGIONS = initialScale * 2.5; // Show wine regions at 2.5x zoom
+var ZOOM_THRESHOLD_PORTS = initialScale * 1.6; // Show ports/labels at ~1.6x zoom
 
 /**
  * Update visibility of zoom-dependent layers based on current scale
@@ -55,6 +56,15 @@ function updateZoomDependentLayers() {
         svg.selectAll('.wine-region').style('display', 'block');
     } else {
         svg.selectAll('.wine-region').style('display', 'none');
+    }
+
+    // Show/hide ports and labels based on zoom level
+    if (currentScale >= ZOOM_THRESHOLD_PORTS) {
+        svg.selectAll('.port-point').style('display', 'block');
+        svg.selectAll('.port-label').style('display', 'block');
+    } else {
+        svg.selectAll('.port-point').style('display', 'none');
+        svg.selectAll('.port-label').style('display', 'none');
     }
     
     // Show/hide distilleries based on zoom level
@@ -85,10 +95,21 @@ window.addEventListener('resize', function() {
     // Recalculate zoom thresholds
     ZOOM_THRESHOLD_DISTILLERIES = initialScale * 3.0;
     ZOOM_THRESHOLD_WINE_REGIONS = initialScale * 2.5;
+    ZOOM_THRESHOLD_PORTS = initialScale * 1.6;
 
     // Recalculate path and redraw all elements
     path = d3.geoPath().projection(projection);
     svg.selectAll("path").attr("d", path);
+
+    // Update port points and labels on resize
+    try {
+        svg.selectAll('.port-point').attr('d', path.pointRadius(4));
+        if (typeof window.updatePortLabelPositions === 'function') {
+            window.updatePortLabelPositions();
+        }
+    } catch (e) {
+        console.warn('Port update error on resize:', e);
+    }
 
     // Update distillery points
     if (typeof updateDistilleryPositions === 'function') {
@@ -258,7 +279,7 @@ function updateRoutes(dataToShow) {
 /**
  * Animate rotation to a new centroid with optional scale change
  */
-function rotateTo(centroid, scale) {
+function rotateTo(centroid, scale, onEnd) {
     var rotate = projection.rotate();
     var currentScale = projection.scale();
 
@@ -276,12 +297,21 @@ function rotateTo(centroid, scale) {
                 projection.scale(s(t));
                 path = d3.geoPath().projection(projection); // Recalculate path
                 svg.selectAll("path").attr("d", path);       // Redraw everything
+
+                // Keep port points/labels aligned during rotation
+                svg.selectAll('.port-point').attr('d', path.pointRadius(4));
+                if (typeof window.updatePortLabelPositions === 'function') {
+                    window.updatePortLabelPositions();
+                }
                 
                 // Update distillery points during animation
                 if (typeof updateDistilleryPositions === 'function') {
                     updateDistilleryPositions();
                 }
             };
+        })
+        .on('end', function() {
+            if (typeof onEnd === 'function') onEnd();
         });
 }
 
@@ -343,6 +373,67 @@ function zoomToCountry(countryFeature) {
     } else {
         updateRoutes([]);
     }
+}
+
+/**
+ * Zoom to a wine region using an existing vertex from its geometry (no centroids)
+ */
+function zoomToWineRegion(regionName) {
+    if (!window.WINE_REGIONS_GEOJSON || !regionName) return;
+
+    // Find the feature by Region property
+    var feature = window.WINE_REGIONS_GEOJSON.features.find(function(f) {
+        return f.properties && f.properties.Region === regionName;
+    });
+    if (!feature || !feature.geometry) return;
+
+    // Use the first coordinate in the geometry as the anchor point
+    function getAnchor(geom) {
+        if (!geom || !geom.coordinates) return null;
+        if (geom.type === 'Polygon' && geom.coordinates[0] && geom.coordinates[0][0]) {
+            return geom.coordinates[0][0];
+        }
+        if (geom.type === 'MultiPolygon' && geom.coordinates[0] && geom.coordinates[0][0] && geom.coordinates[0][0][0]) {
+            return geom.coordinates[0][0][0];
+        }
+        return null;
+    }
+
+    var anchor = getAnchor(feature.geometry);
+    if (!anchor) return;
+
+    // Temporarily rotate to the anchor point to measure bounds for scaling
+    var prevRotate = projection.rotate();
+    var prevScale = projection.scale();
+    var targetRotate = [-anchor[0], -anchor[1], 0];
+    projection.rotate(targetRotate);
+    path = d3.geoPath().projection(projection);
+
+    var fc = { type: 'FeatureCollection', features: [feature] };
+    var b = path.bounds(fc);
+    var dx = Math.max(1, b[1][0] - b[0][0]);
+    var dy = Math.max(1, b[1][1] - b[0][1]);
+    var factor = Math.min((width * 0.7) / dx, (height * 0.7) / dy);
+    // Enforce a moderate zoom for wine regions - reduced for less zoom
+    var minRegionScale = initialScale * 3.5;
+    var desiredScale = Math.max(minRegionScale, Math.max(100, Math.min(prevScale * factor, initialScale * 9)));
+
+    // Restore before animating
+    projection.rotate(prevRotate);
+    projection.scale(prevScale);
+
+    // Ensure regions are visible during zoom animation
+    svg.selectAll('.wine-region').style('display', 'block');
+
+    rotateTo(anchor, desiredScale, function() {
+        if (typeof updateZoomDependentLayers === 'function') {
+            updateZoomDependentLayers();
+        }
+        // Show distilleries and cask statistics for this region
+        if (typeof highlightDistilleriesForWineRegion === 'function') {
+            highlightDistilleriesForWineRegion(regionName);
+        }
+    });
 }
 
 /**

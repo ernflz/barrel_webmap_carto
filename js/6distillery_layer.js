@@ -310,6 +310,13 @@ function highlightDistilleries(names) {
         .attr('opacity', function(d) { return nameSet.has(d.name) ? 1 : 0.1; })
         .attr('r', function(d) { return nameSet.has(d.name) ? 6 : 3.5; })
         .attr('fill', function(d) { return nameSet.has(d.name) ? '#FF4500' : '#d4af37'; }); // Orange-Red for selection
+    
+    // Raise matched distilleries to the top so they appear over others
+    d3.selectAll('.distillery-point').each(function(d) {
+        if (nameSet.has(d.name)) {
+            d3.select(this).raise();
+        }
+    });
 }
 
 function drawDistilleries() {

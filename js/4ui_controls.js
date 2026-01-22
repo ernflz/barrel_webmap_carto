@@ -17,6 +17,12 @@ var drag = d3.drag()
         isDragging = true;
         if (dragEndTimer) clearTimeout(dragEndTimer);
         
+        // Reset wine region dropdown when user starts dragging
+        var wineRegionDropdown = document.getElementById('wine-region-dropdown');
+        if (wineRegionDropdown) {
+            wineRegionDropdown.value = '';
+        }
+        
         // Hide non-essential layers for performance during drag
         svg.selectAll(".graticule").style("opacity", 0);
         svg.selectAll(".lake").style("opacity", 0);
@@ -36,8 +42,19 @@ var drag = d3.drag()
             svg.selectAll(".sphere").attr("d", path);
             svg.selectAll(".shipping-route").attr("d", path);
             svg.selectAll(".wine-region").attr("d", path);
+            svg.selectAll(".port-point").attr("d", path.pointRadius(4));
         } catch (e) {
             console.warn("Path update error:", e);
+        }
+        
+        // Update distillery positions during drag to prevent them from appearing to move
+        if (typeof updateDistilleryPositions === 'function') {
+            updateDistilleryPositions();
+        }
+
+        // Update port labels during drag
+        if (typeof window.updatePortLabelPositions === 'function') {
+            window.updatePortLabelPositions();
         }
     })
     .on("end", function(event) {
@@ -53,6 +70,16 @@ var drag = d3.drag()
                 svg.selectAll("path").attr("d", path);
             } catch (e) {
                 console.warn("Path update error:", e);
+            }
+
+            // Refresh port points and labels after drag completes
+            try {
+                svg.selectAll(".port-point").attr("d", path.pointRadius(4));
+                if (typeof window.updatePortLabelPositions === 'function') {
+                    window.updatePortLabelPositions();
+                }
+            } catch (e) {
+                console.warn("Port update error:", e);
             }
             
             // Fade layers back in
@@ -98,6 +125,13 @@ var zoom = d3.zoom()
             svg.selectAll(".sphere").attr("d", path);
             svg.selectAll(".shipping-route").attr("d", path);
             svg.selectAll(".wine-region").attr("d", path);
+            svg.selectAll(".port-point").attr("d", path.pointRadius(4));
+            if (typeof window.updatePortLabelPositions === 'function') {
+                window.updatePortLabelPositions();
+            }
+            if (typeof updateZoomDependentLayers === 'function') {
+                updateZoomDependentLayers();
+            }
         } catch (e) {
             console.warn("Path update error:", e);
         }
@@ -115,6 +149,19 @@ var zoom = d3.zoom()
                 svg.selectAll("path").attr("d", path);
             } catch (e) {
                 console.warn("Path update error:", e);
+            }
+
+            // Refresh port points and labels after zoom completes
+            try {
+                svg.selectAll(".port-point").attr("d", path.pointRadius(4));
+                if (typeof window.updatePortLabelPositions === 'function') {
+                    window.updatePortLabelPositions();
+                }
+                if (typeof updateZoomDependentLayers === 'function') {
+                    updateZoomDependentLayers();
+                }
+            } catch (e) {
+                console.warn("Port update error:", e);
             }
             
             // Fade layers back in
@@ -177,6 +224,7 @@ function buildCountryList(countries) {
     // ========================================================================
 
     var header = document.createElement('div');
+    header.style.display = 'none';
     header.style.marginBottom = '10px';
     header.style.borderBottom = '2px solid #007acc';
     header.style.paddingBottom = '8px';
