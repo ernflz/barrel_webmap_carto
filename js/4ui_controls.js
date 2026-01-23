@@ -132,6 +132,10 @@ var zoom = d3.zoom()
             if (typeof updateZoomDependentLayers === 'function') {
                 updateZoomDependentLayers();
             }
+            // Update distillery positions during zoom
+            if (typeof updateDistilleryPositions === 'function') {
+                updateDistilleryPositions();
+            }
         } catch (e) {
             console.warn("Path update error:", e);
         }

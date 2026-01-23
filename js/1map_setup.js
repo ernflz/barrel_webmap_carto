@@ -160,6 +160,12 @@ function updateRoutes(dataToShow) {
     // Append path and interaction handlers to each route group
     enter.each(function(d) {
         var g = d3.select(this);
+        var strokeColor = d.properties.color || '#922029';
+        
+        // Calculate opacity intensity based on trade data
+        var trade = d.properties.tradeData || { qty: 0, value: 0 };
+        var tradeIntensity = Math.min(1, (trade.value || 0) / 500000); // Normalize to 0-1 range
+        var baseOpacityMultiplier = Math.max(0.4, tradeIntensity); // Min 0.4x, max 1.0x
 
         // Create tapered effect with multiple overlapping paths
         // Outer layer (widest, most transparent) - for tips
@@ -167,51 +173,54 @@ function updateRoutes(dataToShow) {
             .datum(d)
             .attr('d', path)
             .attr('fill', 'none')
-            .attr('stroke', '#922029')
-            .attr('stroke-width', 18)
+            .attr('stroke', strokeColor)
+            .attr('stroke-width', 12)
             .attr('stroke-linecap', 'round')
             .attr('stroke-linejoin', 'round')
-            .attr('opacity', 0.08);
+            .attr('opacity', 0.04 * baseOpacityMultiplier)
+            .style('pointer-events', 'stroke');
 
         // Middle layer - creates taper
         g.append('path').attr('class', 'shipping-route middle')
             .datum(d)
             .attr('d', path)
             .attr('fill', 'none')
-            .attr('stroke', '#922029')
-            .attr('stroke-width', 12)
+            .attr('stroke', strokeColor)
+            .attr('stroke-width', 7)
             .attr('stroke-linecap', 'round')
             .attr('stroke-linejoin', 'round')
-            .attr('opacity', 0.12)
-            .attr('stroke-dasharray', '0 15% 70% 15%')
-            .attr('stroke-dashoffset', '0');
+            .attr('opacity', 0.08 * baseOpacityMultiplier)
+            .style('pointer-events', 'stroke');
 
         // Inner layer (thickest in middle)
         g.append('path').attr('class', 'shipping-route primary')
             .datum(d)
             .attr('d', path)
             .attr('fill', 'none')
-            .attr('stroke', '#922029')
-            .attr('stroke-width', 8)
+            .attr('stroke', strokeColor)
+            .attr('stroke-width', 4)
             .attr('stroke-linecap', 'round')
             .attr('stroke-linejoin', 'round')
-            .attr('opacity', 0.15)
-            .attr('stroke-dasharray', '0 25% 50% 25%')
-            .attr('stroke-dashoffset', '0');
+            .attr('opacity', 0.15 * baseOpacityMultiplier)
+            .style('pointer-events', 'stroke');
+        
+        // Store the base opacity multiplier for hover/restore operations
+        g.attr('data-opacity-mult', baseOpacityMultiplier);
 
         // Add interaction handlers to all route layers
         g.selectAll('.shipping-route')
             .on('mouseover', function(event, dd) {
                 var routeGroup = d3.select(this.parentNode);
+                var opacityMult = parseFloat(routeGroup.attr('data-opacity-mult')) || 1;
                 routeGroup.raise();
                 
                 // Enhance all layers on hover
                 routeGroup.select('.shipping-route.outer')
-                    .attr('stroke-width', 24).attr('opacity', 0.2);
+                    .attr('stroke-width', 16).attr('opacity', 0.12 * opacityMult);
                 routeGroup.select('.shipping-route.middle')
-                    .attr('stroke-width', 16).attr('opacity', 0.4);
+                    .attr('stroke-width', 10).attr('opacity', 0.24 * opacityMult);
                 routeGroup.select('.shipping-route.primary')
-                    .attr('stroke-width', 10).attr('opacity', 0.6);
+                    .attr('stroke-width', 6).attr('opacity', 0.40 * opacityMult);
                 
                 tooltip.transition().duration(200).style('opacity', 1);
 
@@ -252,14 +261,15 @@ function updateRoutes(dataToShow) {
             })
             .on('mouseout', function(event) {
                 var routeGroup = d3.select(this.parentNode);
+                var opacityMult = parseFloat(routeGroup.attr('data-opacity-mult')) || 1;
                 
                 // Restore all layers to normal state
                 routeGroup.select('.shipping-route.outer')
-                    .attr('stroke-width', 18).attr('opacity', 0.08);
+                    .attr('stroke-width', 12).attr('opacity', 0.04 * opacityMult);
                 routeGroup.select('.shipping-route.middle')
-                    .attr('stroke-width', 12).attr('opacity', 0.12);
+                    .attr('stroke-width', 7).attr('opacity', 0.08 * opacityMult);
                 routeGroup.select('.shipping-route.primary')
-                    .attr('stroke-width', 8).attr('opacity', 0.15);
+                    .attr('stroke-width', 4).attr('opacity', 0.15 * opacityMult);
                 
                 tooltip.transition().duration(500).style('opacity', 0);
             });
@@ -268,7 +278,16 @@ function updateRoutes(dataToShow) {
     // Update positions of all groups for projection changes
     svg.selectAll('.shipping-route-group').each(function(d) {
         var g = d3.select(this);
-        g.selectAll('.shipping-route').datum(d).attr('d', path).attr('stroke', d.properties.color);
+        // Update path geometry but preserve all styling
+        g.selectAll('.shipping-route.outer')
+            .datum(d)
+            .attr('d', path);
+        g.selectAll('.shipping-route.middle')
+            .datum(d)
+            .attr('d', path);
+        g.selectAll('.shipping-route.primary')
+            .datum(d)
+            .attr('d', path);
     });
 }
 
