@@ -16,6 +16,7 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
         .attr("class", "sphere")
         .attr("d", path)
         .attr("fill", "#b1b4b3")
+        .attr("stroke", "none")
         .on("click", function() {
             updateRoutes(GLOBAL_SHIPPING_DATA); // Show ALL routes
             rotateTo([0, 0], initialScale);
@@ -26,15 +27,7 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
         });
 
     // ========================================================================
-    // LAYER 2: GRATICULE (Grid)
-    // ========================================================================
-
-    var graticule = d3.geoGraticule();
-    svg.append("path").datum(graticule).attr("class", "graticule").attr("d", path)
-        .attr("fill", "none").attr("stroke", "white").attr("stroke-width", 0.5).attr("stroke-opacity", 0.3);
-
-    // ========================================================================
-    // LAYER 3: COUNTRIES
+    // LAYER 2: COUNTRIES
     // ========================================================================
 
     // Countries layer with click-to-zoom and hover tooltips
@@ -142,9 +135,16 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
     // Helper to update label positions on projection changes with simple search
     window.updatePortLabelPositions = function() {
         var labels = svg.selectAll('.port-label').nodes();
+        var points = svg.selectAll('.port-point').nodes();
         if (!labels || labels.length === 0) return;
 
         var placedBoxes = [];
+        var currentScale = projection.scale();
+        var shouldShow = currentScale >= ZOOM_THRESHOLD_PORTS;
+        
+        // Get the current view center (where the projection points to)
+        var rot = projection.rotate ? projection.rotate() : [0, 0, 0];
+        var viewCenter = [-rot[0], -rot[1]]; // Point at center of map view
 
         // Candidate offsets radiating from the port point
         var candidates = [
@@ -158,14 +158,39 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
             { dx: -20, dy: 0 }
         ];
 
-        labels.forEach(function(node) {
+        labels.forEach(function(node, idx) {
             var d = d3.select(node).datum();
-            var c = d && d.geometry && d.geometry.coordinates ? projection(d.geometry.coordinates) : null;
+            var coords = d && d.geometry && d.geometry.coordinates;
+            var pointNode = points[idx];
 
-            if (!c) {
-                node.setAttribute('transform', 'translate(-9999,-9999)');
+            // Hide if zoomed out or no coordinates
+            if (!shouldShow || !coords) {
+                node.style.display = 'none';
+                if (pointNode) pointNode.style.display = 'none';
                 return;
             }
+
+            // Check if the port is visible on the front of the globe
+            // Project the point to screen coordinates
+            var c = projection(coords);
+            
+            // If projection returns null, the point is not visible (clipped)
+            if (!c) {
+                node.style.display = 'none';
+                if (pointNode) pointNode.style.display = 'none';
+                return;
+            }
+            
+            // Double-check: port should be less than 90 degrees away from view center
+            var visible = d3.geoDistance(coords, viewCenter) < Math.PI / 2;
+            if (!visible) {
+                node.style.display = 'none';
+                if (pointNode) pointNode.style.display = 'none';
+                return;
+            }
+
+            node.style.display = 'block';
+            if (pointNode) pointNode.style.display = 'block';
 
             var bbox = node.getBBox();
             var best = null;

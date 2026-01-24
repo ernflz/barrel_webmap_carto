@@ -24,7 +24,6 @@ var drag = d3.drag()
         }
         
         // Hide non-essential layers for performance during drag
-        svg.selectAll(".graticule").style("opacity", 0);
         svg.selectAll(".lake").style("opacity", 0);
         svg.selectAll(".distillery-point").style("opacity", 0);
         svg.selectAll(".port").style("opacity", 0);
@@ -38,9 +37,12 @@ var drag = d3.drag()
         
         // Only update essential layers (countries and shipping routes)
         try {
-            svg.selectAll(".country").attr("d", path);
             svg.selectAll(".sphere").attr("d", path);
-            svg.selectAll(".shipping-route").attr("d", path);
+            svg.selectAll(".country").attr("d", path);
+            // Update route groups properly (preserves multi-layer structure)
+            svg.selectAll('.shipping-route-group').each(function(d) {
+                d3.select(this).selectAll('.shipping-route').attr('d', path);
+            });
             svg.selectAll(".wine-region").attr("d", path);
             svg.selectAll(".port-point").attr("d", path.pointRadius(4));
         } catch (e) {
@@ -83,7 +85,6 @@ var drag = d3.drag()
             }
             
             // Fade layers back in
-            svg.selectAll(".graticule").transition().duration(200).style("opacity", 1);
             svg.selectAll(".lake").transition().duration(200).style("opacity", 1);
             svg.selectAll(".distillery-point").transition().duration(200).style("opacity", 1);
             svg.selectAll(".port").transition().duration(200).style("opacity", 1);
@@ -110,7 +111,6 @@ var zoom = d3.zoom()
         if (zoomEndTimer) clearTimeout(zoomEndTimer);
         
         // Hide non-essential layers for performance during zoom
-        svg.selectAll(".graticule").style("opacity", 0);
         svg.selectAll(".lake").style("opacity", 0);
         svg.selectAll(".distillery-point").style("opacity", 0);
         svg.selectAll(".port").style("opacity", 0);
@@ -121,9 +121,12 @@ var zoom = d3.zoom()
 
         // Only update essential layers (countries and shipping routes)
         try {
-            svg.selectAll(".country").attr("d", path);
             svg.selectAll(".sphere").attr("d", path);
-            svg.selectAll(".shipping-route").attr("d", path);
+            svg.selectAll(".country").attr("d", path);
+            // Update route groups properly (preserves multi-layer structure)
+            svg.selectAll('.shipping-route-group').each(function(d) {
+                d3.select(this).selectAll('.shipping-route').attr('d', path);
+            });
             svg.selectAll(".wine-region").attr("d", path);
             svg.selectAll(".port-point").attr("d", path.pointRadius(4));
             if (typeof window.updatePortLabelPositions === 'function') {
@@ -150,7 +153,15 @@ var zoom = d3.zoom()
             path = d3.geoPath().projection(projection);
             
             try {
-                svg.selectAll("path").attr("d", path);
+                svg.selectAll(".sphere").attr("d", path);
+                svg.selectAll(".country").attr("d", path);
+                svg.selectAll(".lake").attr("d", path);
+                svg.selectAll(".wine-region").attr("d", path);
+                // Update route groups properly (preserves multi-layer structure)
+                svg.selectAll('.shipping-route-group').each(function(d) {
+                    d3.select(this).selectAll('.shipping-route').attr('d', path);
+                });
+                svg.selectAll(".port-point").attr("d", path.pointRadius(4));
             } catch (e) {
                 console.warn("Path update error:", e);
             }
@@ -169,7 +180,6 @@ var zoom = d3.zoom()
             }
             
             // Fade layers back in
-            svg.selectAll(".graticule").transition().duration(200).style("opacity", 1);
             svg.selectAll(".lake").transition().duration(200).style("opacity", 1);
             svg.selectAll(".distillery-point").transition().duration(200).style("opacity", 1);
             svg.selectAll(".port").transition().duration(200).style("opacity", 1);
@@ -185,6 +195,23 @@ var zoom = d3.zoom()
 // Apply drag and zoom to SVG
 svg.call(drag);
 svg.call(zoom).call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(initialScale));
+
+// ============================================================================
+// ZOOM BUTTONS (UI)
+// ============================================================================
+
+function applyZoomFactor(factor) {
+    svg.transition().duration(200).call(zoom.scaleBy, factor, [width / 2, height / 2]);
+}
+
+(function initZoomButtons() {
+    var zoomInBtn = document.getElementById('zoom-in');
+    var zoomOutBtn = document.getElementById('zoom-out');
+    if (!zoomInBtn || !zoomOutBtn) return;
+
+    zoomInBtn.addEventListener('click', function() { applyZoomFactor(1.2); });
+    zoomOutBtn.addEventListener('click', function() { applyZoomFactor(0.8); });
+})();
 
 // ============================================================================
 // SECTION 2: COUNTRY SELECTION UI
@@ -397,9 +424,6 @@ for (var yy3 = -400; yy3 < 800; yy3 += 72) {
 var gradient = defs.append("radialGradient").attr("id", "globe-shadow").attr("cx", "60%").attr("cy", "20%");
 gradient.append("stop").attr("offset", "10%").attr("stop-color", "white").attr("stop-opacity", 0.1);
 gradient.append("stop").attr("offset", "100%").attr("stop-color", "black").attr("stop-opacity", 0.4);
-
-// Apply shading gradient to sphere
-svg.append("path").datum({ type: "Sphere" }).attr("class", "shading").attr("d", path).attr("fill", "url(#globe-shadow)").attr("pointer-events", "none");
 
 // ============================================================================
 // SECTION 4: TIMELINE SLIDER

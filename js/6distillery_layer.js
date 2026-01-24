@@ -99,14 +99,15 @@ function initDistilleryLayer() {
 }
 
 function getStatsContainer() {
-    var sidebar = d3.select("#tab-legend-content");
-    var container = sidebar.select('.cask-stats-container');
+    // Use floating top-right panel for stats
+    var container = d3.select('#cask-stats-panel');
     if (container.empty()) {
-        // Insert at the top, leaving other content (like the routes list) alone
-        // If there's a P (note), we can put it after or before. 
-        // Let's put it at the top so stats are prominent.
-        container = sidebar.insert('div', ':first-child').attr('class', 'cask-stats-container');
+        container = d3.select('body')
+            .append('div')
+            .attr('id', 'cask-stats-panel')
+            .attr('class', 'info-panel');
     }
+    container.classed('cask-stats-container', true);
     return container;
 }
 

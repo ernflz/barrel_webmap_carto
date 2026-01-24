@@ -21,14 +21,13 @@
         <aside id="legend">
             <div id="legend-header">
                 <div class="sidebar-title">
-                    <h1>Where Does the Barrel Roll?🛢️</h1>
+                    <div class="title-row">
+                        <h1>Where Does the Barrel Roll?🛢️</h1>
+                        <button id="help-btn" class="help-button" title="Help">?</button>
+                    </div>
                     <p class="sidebar-desc">This is a placeholder for sidebar information. You can add instructions, context, or any other relevant details here.</p>
                 </div>
             </div>
-            
-            <div id="tab-legend-content" class="tab-content active">
-            </div>
-            
             <div id="tab-controls-content" class="tab-content">
                 <p id="sidebar-note">Choose a wine region to see the disterilleries</p>
                 <div id="wine-region-control">
@@ -43,9 +42,36 @@
                     </select>
                 </div>
                 </div>
+            <div id="tab-legend-content" class="tab-content active">
+            </div>
+            
+        
         </aside>
 
-        <div id="mapContainer"></div>
+        <div id="mapContainer">
+            <!-- Zoom Controls (bottom-left, over map) -->
+            <div id="zoom-controls" class="zoom-controls">
+                <button id="zoom-in" aria-label="Zoom in">+</button>
+                <button id="zoom-out" aria-label="Zoom out">−</button>
+            </div>
+        </div>
+
+        <!-- Floating Cask Statistics Panel (top-right) -->
+        <div id="cask-stats-panel" class="info-panel"></div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>How to Use This Map</h2>
+            <p><strong>Rotate the Globe:</strong> Click and drag to rotate the map and view different regions.</p>
+            <p><strong>Zoom In/Out:</strong> Use your mouse wheel or trackpad to zoom in and out of the map.</p>
+            <p><strong>View Shipping Routes:</strong> Hover over shipping lanes to see trade information including importer, exporter, trade value, and quantity.</p>
+            <p><strong>Explore Wine Regions:</strong> Select a wine region from the dropdown to see distilleries and filter related data.</p>
+            <p><strong>Port Labels:</strong> When zoomed in, port labels appear on the visible side of the globe. They will hide when viewing the opposite hemisphere.</p>
+            <p><strong>Interactive Elements:</strong> Click on countries to zoom in and see their trade routes.</p>
+        </div>
     </div>
 
     <script src="js/1map_setup.js"></script>

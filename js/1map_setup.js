@@ -147,9 +147,23 @@ function updateRoutes(dataToShow) {
             color: route.color,
             info: route.info,
             id: route.name + route.value, // Unique ID for D3 updates
-            tradeData: route.tradeData // Include trade data in properties
+            tradeData: route.tradeData, // Include trade data in properties
+            importerISO: route.countries && route.countries[0],
+            exporterISO: route.countries && route.countries[1]
         }
     }));
+
+    // Helper to restore a route group's styling
+    function restoreRouteStyle(routeGroup) {
+        var opacityMult = parseFloat(routeGroup.attr('data-opacity-mult')) || 1;
+        routeGroup.select('.shipping-route.outer')
+            .attr('stroke-width', 12).attr('opacity', 0.04 * opacityMult);
+        routeGroup.select('.shipping-route.middle')
+            .attr('stroke-width', 7).attr('opacity', 0.08 * opacityMult);
+        routeGroup.select('.shipping-route.primary')
+            .attr('stroke-width', 4).attr('opacity', 0.15 * opacityMult);
+        tooltip.transition().duration(300).style('opacity', 0);
+    }
     var groups = svg.selectAll('.shipping-route-group')
         .data(routeFeatures, d => d.properties.id);
 
@@ -207,6 +221,11 @@ function updateRoutes(dataToShow) {
         // Store the base opacity multiplier for hover/restore operations
         g.attr('data-opacity-mult', baseOpacityMultiplier);
 
+        // Ensure the group itself can restore on pointer leave (covers fast moves)
+        g.on('mouseleave', function() { restoreRouteStyle(d3.select(this)); })
+         .on('touchend', function() { restoreRouteStyle(d3.select(this)); })
+         .on('touchcancel', function() { restoreRouteStyle(d3.select(this)); });
+
         // Add interaction handlers to all route layers
         g.selectAll('.shipping-route')
             .on('mouseover', function(event, dd) {
@@ -226,14 +245,20 @@ function updateRoutes(dataToShow) {
 
                 // Format trade data for display
                 var trade = d.properties.tradeData || { qty: 0, value: 0 };
+                var importerISO = d.properties.importerISO || null;
+                var exporterISO = d.properties.exporterISO || null;
 
                 // Extract country names from ISO codes (format: "ISO1 - ISO2")
                 var routeParts = d.properties.name.split(' - ');
-                var country1 = routeParts[0] ? (window.ISO_TO_COUNTRY && window.ISO_TO_COUNTRY[routeParts[0].trim()] || routeParts[0]) : 'Unknown';
-                var country2 = routeParts[1] ? (window.ISO_TO_COUNTRY && window.ISO_TO_COUNTRY[routeParts[1].trim()] || routeParts[1]) : 'Unknown';
-                var displayName = country1 + ' - ' + country2;
+                var isoA = importerISO || (routeParts[0] ? routeParts[0].trim() : null);
+                var isoB = exporterISO || (routeParts[1] ? routeParts[1].trim() : null);
+                var importerName = isoA ? ((window.ISO_TO_COUNTRY && window.ISO_TO_COUNTRY[isoA]) || isoA) : 'Unknown importer';
+                var exporterName = isoB ? ((window.ISO_TO_COUNTRY && window.ISO_TO_COUNTRY[isoB]) || isoB) : 'Unknown exporter';
+                var displayName = importerName + ' - ' + exporterName;
 
                 var tooltipHTML = '<strong>' + displayName + '</strong><br/>';
+                tooltipHTML += '<span style="color:#888">Importer:</span> ' + importerName + '<br/>';
+                tooltipHTML += '<span style="color:#888">Exporter:</span> ' + exporterName + '<br/>';
 
                 // Format value: millions if >= 1M, otherwise regular number
                 if (trade.value && trade.value > 0) {
@@ -260,18 +285,7 @@ function updateRoutes(dataToShow) {
                 tooltip.style('left', (event.pageX + 15) + 'px').style('top', (event.pageY - 28) + 'px');
             })
             .on('mouseout', function(event) {
-                var routeGroup = d3.select(this.parentNode);
-                var opacityMult = parseFloat(routeGroup.attr('data-opacity-mult')) || 1;
-                
-                // Restore all layers to normal state
-                routeGroup.select('.shipping-route.outer')
-                    .attr('stroke-width', 12).attr('opacity', 0.04 * opacityMult);
-                routeGroup.select('.shipping-route.middle')
-                    .attr('stroke-width', 7).attr('opacity', 0.08 * opacityMult);
-                routeGroup.select('.shipping-route.primary')
-                    .attr('stroke-width', 4).attr('opacity', 0.15 * opacityMult);
-                
-                tooltip.transition().duration(500).style('opacity', 0);
+                restoreRouteStyle(d3.select(this.parentNode));
             });
     });
 
