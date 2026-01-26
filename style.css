@@ -315,6 +315,19 @@ body {
     cursor: pointer;
 }
 
+/* Subtle highlight for countries that have shipping/trade data */
+.country.has-data {
+    fill: #8f8072;
+    stroke: #574c3b;
+    stroke-width: 1px;
+    fill-opacity: 0.95;
+}
+
+.country.has-data:hover {
+    stroke: #fff;
+    stroke-width: 1px;
+}
+
 .lake {
     fill: none;
     stroke: #7ea6c8;
@@ -489,7 +502,8 @@ body {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    /* Ensure the help modal overlays all UI panels (cask stats, zoom buttons, etc.) */
+    z-index: 99999;
     left: 0;
     top: 0;
     width: 100%;

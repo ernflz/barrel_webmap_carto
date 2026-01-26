@@ -40,6 +40,20 @@ var projection = d3.geoOrthographic()
     .clipAngle(90);
 var path = d3.geoPath().projection(projection);
 
+// Lightweight debounce helper to avoid calling expensive layout updates every frame
+function debounce(fn, wait) {
+    var t;
+    return function() {
+        var ctx = this, args = arguments;
+        clearTimeout(t);
+        t = setTimeout(function() { fn.apply(ctx, args); }, wait);
+    };
+}
+// Expose a short-debounced port label updater to reduce thrashing during animations
+window.updatePortLabelPositionsDebounced = debounce(function() {
+    if (typeof window.updatePortLabelPositions === 'function') window.updatePortLabelPositions();
+}, 40);
+
 // Zoom thresholds for showing detailed layers
 var ZOOM_THRESHOLD_DISTILLERIES = initialScale * 3.0; // Show distilleries at 3x zoom
 var ZOOM_THRESHOLD_WINE_REGIONS = initialScale * 2.5; // Show wine regions at 2.5x zoom
@@ -256,9 +270,8 @@ function updateRoutes(dataToShow) {
                 var exporterName = isoB ? ((window.ISO_TO_COUNTRY && window.ISO_TO_COUNTRY[isoB]) || isoB) : 'Unknown exporter';
                 var displayName = importerName + ' - ' + exporterName;
 
-                var tooltipHTML = '<strong>' + displayName + '</strong><br/>';
-                tooltipHTML += '<span style="color:#888">Importer:</span> ' + importerName + '<br/>';
-                tooltipHTML += '<span style="color:#888">Exporter:</span> ' + exporterName + '<br/>';
+                // Title: "Importer imports casks from Exporter"
+                var tooltipHTML = '<strong>' + importerName + ' imports casks from ' + exporterName + '</strong><br/>';
 
                 // Format value: millions if >= 1M, otherwise regular number
                 if (trade.value && trade.value > 0) {
@@ -329,14 +342,30 @@ function rotateTo(centroid, scale, onEnd) {
                 projection.rotate(r(t));
                 projection.scale(s(t));
                 path = d3.geoPath().projection(projection); // Recalculate path
-                svg.selectAll("path").attr("d", path);       // Redraw everything
 
-                // Keep port points/labels aligned during rotation
-                svg.selectAll('.port-point').attr('d', path.pointRadius(4));
-                if (typeof window.updatePortLabelPositions === 'function') {
-                    window.updatePortLabelPositions();
+                // Update only the essential path layers each frame to reduce DOM cost
+                try {
+                    svg.selectAll('.sphere').attr('d', path);
+                    svg.selectAll('.country').attr('d', path);
+                    svg.selectAll('.wine-region').attr('d', path);
+                    svg.selectAll('.lake').attr('d', path);
+                    svg.selectAll('.port-point').attr('d', path.pointRadius(4));
+                    // Update shipping route groups while preserving structure
+                    svg.selectAll('.shipping-route-group').each(function(d) {
+                        d3.select(this).selectAll('.shipping-route').attr('d', path);
+                    });
+                    // Update distillery flows (path elements)
+                    svg.selectAll('.distillery-flow-path').attr('d', path);
+                } catch (e) {
+                    // Fallback to a full redraw if something unexpected fails
+                    svg.selectAll('path').attr('d', path);
                 }
-                
+
+                // Keep port labels aligned but debounced to avoid layout thrash
+                if (typeof window.updatePortLabelPositionsDebounced === 'function') {
+                    window.updatePortLabelPositionsDebounced();
+                }
+
                 // Update distillery points during animation
                 if (typeof updateDistilleryPositions === 'function') {
                     updateDistilleryPositions();
@@ -458,15 +487,45 @@ function zoomToWineRegion(regionName) {
     // Ensure regions are visible during zoom animation
     svg.selectAll('.wine-region').style('display', 'block');
 
-    rotateTo(anchor, desiredScale, function() {
-        if (typeof updateZoomDependentLayers === 'function') {
-            updateZoomDependentLayers();
-        }
-        // Show distilleries and cask statistics for this region
-        if (typeof highlightDistilleriesForWineRegion === 'function') {
-            highlightDistilleriesForWineRegion(regionName);
-        }
-    });
+    // Compute a horizontal offset so the selected region is not hidden
+    // behind the cask statistics panel (usually top-right). We convert
+    // an approximate pixel offset into an angular longitude offset
+    // using the current projection scale. This is a pragmatic approximation
+    // that keeps the region visible to the left of the stats panel.
+    try {
+        var statsPanel = document.getElementById('cask-stats-panel');
+        var panelWidth = statsPanel ? (statsPanel.offsetWidth || 0) : 0;
+        var panelMargin = 20; // additional spacing in pixels
+        var offsetPx = panelWidth / 2 + panelMargin;
+
+        // Convert pixel offset to radians using scale (orthographic approx)
+        var scaleForCalc = Math.max(1, desiredScale || projection.scale());
+        var offsetRad = offsetPx / scaleForCalc; // ~ radians
+        var offsetDeg = (offsetRad * 180) / Math.PI;
+
+        // Shift longitude so the anchor appears shifted left on screen (away from right panel)
+        var adjustedAnchor = [anchor[0] + offsetDeg, anchor[1]];
+
+        rotateTo(adjustedAnchor, desiredScale, function() {
+            if (typeof updateZoomDependentLayers === 'function') {
+                updateZoomDependentLayers();
+            }
+            // Show distilleries and cask statistics for this region
+            if (typeof highlightDistilleriesForWineRegion === 'function') {
+                highlightDistilleriesForWineRegion(regionName);
+            }
+        });
+    } catch (e) {
+        // Fallback to default centering if anything fails
+        rotateTo(anchor, desiredScale, function() {
+            if (typeof updateZoomDependentLayers === 'function') {
+                updateZoomDependentLayers();
+            }
+            if (typeof highlightDistilleriesForWineRegion === 'function') {
+                highlightDistilleriesForWineRegion(regionName);
+            }
+        });
+    }
 }
 
 /**

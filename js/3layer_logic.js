@@ -35,7 +35,7 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
         .data(countries.features).enter().append("path")
         .attr("class", "country")
         .attr("d", path)
-        .attr("fill", "#625e4c")
+        .attr("fill", "#ada096")
         .attr("stroke", "#999")
         .attr("stroke-width", 0.5)
         .on("click", function(event, d) {
@@ -47,6 +47,14 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
             zoomToCountry(d);
         })
         .on("mouseover", function(event, d) {
+            var sel = d3.select(this);
+            var origStroke = sel.attr("stroke");
+            var origStrokeWidth = sel.attr("stroke-width");
+            sel.attr("data-orig-stroke", origStroke || "#574c3b")
+               .attr("data-orig-stroke-width", origStrokeWidth || 1)
+               .attr("stroke", "#ffd166")
+               .attr("stroke-width", 2)
+               .raise();
             tooltip.transition().duration(200).style("opacity", 1);
             var countryISO = d.properties.ADM0_A3;
             var countryName = d.properties.NAME;
@@ -86,8 +94,38 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
             tooltip.style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px");
         })
         .on("mouseout", function() {
+            var sel = d3.select(this);
+            var origStroke = sel.attr("data-orig-stroke") || "#574c3b";
+            var origStrokeWidth = sel.attr("data-orig-stroke-width") || 1;
+            sel.attr("stroke", origStroke)
+               .attr("stroke-width", origStrokeWidth);
             tooltip.transition().duration(500).style("opacity", 0);
         });
+
+    // Highlight countries that appear in the shipping dataset
+    try {
+        var countryCodesWithData = new Set();
+        (window.GLOBAL_SHIPPING_DATA || []).forEach(function(r) {
+            if (r.countries && Array.isArray(r.countries)) {
+                r.countries.forEach(function(c) { if (c) countryCodesWithData.add(c); });
+            }
+        });
+
+        svg.selectAll('.country').each(function(d) {
+            var props = d && d.properties;
+            var iso = props && (props.ADM0_A3 || props.iso_a3 || props.ISO_A3);
+            var name = props && (props.NAME || props.name);
+            var has = false;
+            if (iso && countryCodesWithData.has(iso)) has = true;
+            if (!has && name && countryCodesWithData.has(name)) has = true;
+            d3.select(this)
+                .classed('has-data', has)
+                .attr('fill', has ? '#8f8072' : '#ada096')
+                .attr('stroke', '#999');
+        });
+    } catch (e) {
+        console.warn('Country highlight error:', e);
+    }
 
     // ========================================================================
     // LAYER 4: WATER BODIES (Lakes & Rivers)
@@ -270,7 +308,10 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
         .on("click", function(event, d) {
             event.stopPropagation();
             var regionName = d.properties.Region || "Wine Region";
-            if (typeof highlightDistilleriesForWineRegion === 'function') {
+            if (typeof zoomToWineRegion === 'function') {
+                zoomToWineRegion(regionName);
+            } else if (typeof highlightDistilleriesForWineRegion === 'function') {
+                // Fallback: highlight without zoom
                 highlightDistilleriesForWineRegion(regionName);
             }
         });
