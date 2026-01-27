@@ -26,8 +26,8 @@ body {
     position: fixed;
     top: 12px;
     right: 12px;
-    width: 260px;
-    max-height: 55vh;
+    width: clamp(220px, 22vw, 320px);
+    max-height: clamp(220px, 55vh, 520px);
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid #007acc;
@@ -102,8 +102,8 @@ body {
 /* =========================================================================== */
 
 #legend {
-    width: 26%;
-    min-width: 260px;
+    width: clamp(240px, 28vw, 420px);
+    min-width: 220px;
     padding: 16px;
     background-color: #c1c0c0;
     border-right: 5px solid gray;
@@ -118,7 +118,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    margin-bottom: 12px;
+    margin-bottom: 0px;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(0,0,0,0.12);
 }
@@ -192,6 +192,86 @@ body {
 
 .tab-content.active {
     display: block;
+}
+
+#legend-content {
+    overflow: visible;
+    margin-top: -1x;
+}
+
+/* Legend content */
+.legend-section {
+    background: #e8e8e8;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 6px;
+    padding: 9px;
+    margin-bottom: 0px;
+}
+
+.legend-section h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(0,0,0,0.1);
+}
+
+.legend-item:last-child {
+    border-bottom: none;
+}
+
+.legend-swatch {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    flex: 0 0 18px;
+    margin-top: 2px;
+}
+
+.legend-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+    color: #444;
+}
+
+.legend-text strong {
+    font-size: 13px;
+    color: #333;
+}
+
+.legend-distillery {
+    background: #d4af37;
+    border: 1px solid #ffffff;
+    border-radius: 50%;
+}
+
+.legend-port {
+    background: #1976d2;
+    border: 1px solid #ffffff;
+    border-radius: 50%;
+}
+
+.legend-route {
+    width: 22px;
+    height: 6px;
+    margin-top: 8px;
+    background: #922029;
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+}
+
+.legend-country {
+    background: #ada096;
+    border: 1px solid #999;
+    border-radius: 3px;
 }
 
 #tab-controls-content {
@@ -524,9 +604,8 @@ body {
     padding: 30px;
     border: 2px solid #007acc;
     border-radius: 8px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
+    width: min(90vw, 640px);
+    max-height: min(80vh, 720px);
     overflow-y: auto;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     animation: slideIn 0.3s ease;
@@ -578,4 +657,10 @@ body {
 /* Ensure ocean sphere has no outline ring */
 .sphere {
     stroke: none;
+}
+
+/* Cask statistics panel sizing */
+#cask-stats-panel {
+    width: clamp(220px, 24vw, 360px);
+    max-height: clamp(220px, 60vh, 560px);
 }

@@ -89,6 +89,19 @@ function updateZoomDependentLayers() {
     }
 }
 
+// Bring key point layers to the front (ports, labels, distilleries)
+function bringForegroundLayers() {
+    try {
+        svg.selectAll('.wine-region').raise();
+        svg.selectAll('.port-point').raise();
+        svg.selectAll('.port-label').raise();
+        var distilleryGroup = svg.select('.distillery-group');
+        if (!distilleryGroup.empty()) distilleryGroup.raise();
+    } catch (e) {
+        console.warn('Foreground layer raise error:', e);
+    }
+}
+
 // ============================================================================
 // WINDOW RESIZE HANDLER
 // ============================================================================
@@ -383,6 +396,36 @@ function rotateTo(centroid, scale, onEnd) {
  */
 function zoomToCountry(countryFeature) {
     var countryName = countryFeature.properties && (countryFeature.properties.NAME || countryFeature.properties.name);
+    var countryISO = countryFeature.properties && (countryFeature.properties.ADM0_A3 || countryFeature.properties.ISO_A3 || countryFeature.properties.iso_a3);
+
+    // Use mainland polygon for France (exclude overseas territories)
+    function getMainlandFeature(feature) {
+        if (!feature || !feature.geometry) return feature;
+        if (feature.geometry.type === 'MultiPolygon') {
+            var polys = feature.geometry.coordinates || [];
+            if (!polys.length) return feature;
+            var bestIndex = 0;
+            var bestArea = -Infinity;
+            polys.forEach(function(coords, i) {
+                var polyFeature = { type: 'Feature', geometry: { type: 'Polygon', coordinates: coords } };
+                var area = d3.geoArea(polyFeature);
+                if (area > bestArea) {
+                    bestArea = area;
+                    bestIndex = i;
+                }
+            });
+            return {
+                type: 'Feature',
+                properties: feature.properties,
+                geometry: { type: 'Polygon', coordinates: polys[bestIndex] }
+            };
+        }
+        return feature;
+    }
+
+    var zoomFeature = (countryISO === 'FRA' || countryName === 'France')
+        ? getMainlandFeature(countryFeature)
+        : countryFeature;
 
     // Collect relevant routes - match by country name or ISO code
     var relevant = GLOBAL_SHIPPING_DATA.filter(function(r) {
@@ -396,7 +439,7 @@ function zoomToCountry(countryFeature) {
     });
 
     // Create a feature collection including the country and route lines
-    var feats = [countryFeature];
+    var feats = [zoomFeature];
     relevant.forEach(function(r) {
         if (r.path && r.path.length > 0) {
             feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: r.path } });
@@ -406,7 +449,7 @@ function zoomToCountry(countryFeature) {
     var fc = { type: 'FeatureCollection', features: feats };
 
     // Compute centroid for rotation
-    var centroid = d3.geoCentroid(countryFeature);
+    var centroid = d3.geoCentroid(zoomFeature);
     // Temporarily set projection to target rotation to measure bounds
     var prevRotate = projection.rotate();
     var prevScale = projection.scale();
@@ -435,6 +478,9 @@ function zoomToCountry(countryFeature) {
     } else {
         updateRoutes([]);
     }
+
+    // Ensure ports, labels, and distilleries are on top after routes update
+    bringForegroundLayers();
 }
 
 /**
