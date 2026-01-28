@@ -196,16 +196,20 @@ body {
 
 #legend-content {
     overflow: visible;
-    margin-top: -1x;
+    margin-top: 4px;
+    display: flex;
+    justify-content: center;
 }
 
 /* Legend content */
 .legend-section {
-    background: #e8e8e8;
-    border: 1px solid rgba(0,0,0,0.12);
-    border-radius: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     padding: 9px;
-    margin-bottom: 0px;
+    margin: 4px auto 0;
+    width: 100%;
+    max-width: 320px;
 }
 
 .legend-section h2 {
@@ -248,15 +252,17 @@ body {
 }
 
 .legend-distillery {
-    background: #d4af37;
-    border: 1px solid #ffffff;
-    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    background: url('symbol/slice5.svg') center/contain no-repeat;
 }
 
 .legend-port {
-    background: #1976d2;
-    border: 1px solid #ffffff;
-    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    background: url('symbol/slice4.svg') center/contain no-repeat;
 }
 
 .legend-route {
@@ -276,13 +282,14 @@ body {
 
 #tab-controls-content {
     display: block !important;
+    flex: 0 0 auto;
+    margin-bottom: 8px;
 }
 
 #wine-region-control {
     margin-top: 15px;
     padding: 10px;
-    background: #e8e8e8;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 #wine-region-control label {
@@ -406,6 +413,15 @@ body {
 .country.has-data:hover {
     stroke: #fff;
     stroke-width: 1px;
+}
+
+/* Hover outline drawn above all layers */
+.country-hover-outline {
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+    stroke-linejoin: round;
+    pointer-events: none;
 }
 
 .lake {

@@ -2,6 +2,48 @@
 // DISTILLERY LAYER & CASK SOURCING VISUALIZATION
 // ============================================================================
 
+// Distillery symbol sizing (px)
+var DISTILLERY_SIZE = 12;
+var DISTILLERY_HOVER_SIZE = 16;
+var DISTILLERY_HIGHLIGHT_SIZE = 16;
+
+function resetDistilleryHighlights() {
+    window.DISTILLERY_FILTER_ACTIVE = false;
+    d3.selectAll('.distillery-point')
+        .interrupt()
+        .style('opacity', 0.9)
+        .attr('width', DISTILLERY_SIZE)
+        .attr('height', DISTILLERY_SIZE)
+        .classed('is-highlighted', false)
+        .attr('fill', null)
+        .style('pointer-events', 'auto');
+
+    if (typeof updateDistilleryPositions === 'function') {
+        updateDistilleryPositions();
+    }
+}
+
+function applyDistilleryFilterVisibility() {
+    var nodes = d3.selectAll('.distillery-point');
+    if (!nodes || nodes.empty()) return;
+
+    nodes.interrupt();
+
+    if (window.DISTILLERY_FILTER_ACTIVE) {
+        nodes
+            .style('opacity', function() {
+                return d3.select(this).classed('is-highlighted') ? 1 : 0;
+            })
+            .style('pointer-events', function() {
+                return d3.select(this).classed('is-highlighted') ? 'auto' : 'none';
+            });
+    } else {
+        nodes
+            .style('opacity', 0.9)
+            .style('pointer-events', 'auto');
+    }
+}
+
 // Map cask types to their country flag emoji
 function getCaskProvenance(caskName) {
     var lower = (caskName || '').toLowerCase();
@@ -254,13 +296,17 @@ function filterDistilleriesByCask(caskName, options) {
     // Back button
     container.select('#back-to-stats').on('click', function() {
         // Reset map highlights
-        d3.selectAll('.distillery-point')
-            .transition().duration(200)
-            .attr('opacity', 0.9)
-            .attr('r', 3.5)
-            .attr('fill', '#d4af37');
+        resetDistilleryHighlights();
             
         showCaskStatistics();
+    });
+
+    // Defensive event delegation (in case the button is re-rendered)
+    container.on('click.backToStats', function(event) {
+        if (event && event.target && event.target.id === 'back-to-stats') {
+            resetDistilleryHighlights();
+            showCaskStatistics();
+        }
     });
 
     // Distillery links
@@ -278,7 +324,8 @@ function filterDistilleriesByCask(caskName, options) {
             d3.selectAll('.distillery-point')
                 .filter(p => p.name === d.name)
                 .transition().duration(200)
-                .attr('r', 8).attr('stroke-width', 2);
+                .attr('width', DISTILLERY_HIGHLIGHT_SIZE)
+                .attr('height', DISTILLERY_HIGHLIGHT_SIZE);
         }
     });
 
@@ -296,21 +343,33 @@ function highlightDistilleriesForWineRegion(regionName) {
 
 function highlightDistilleries(names) {
     if (!names || !names.length) {
-        d3.selectAll('.distillery-point')
-            .transition().duration(300)
-            .attr('opacity', 0.9)
-            .attr('r', 3.5)
-            .attr('fill', '#d4af37');
+        window.DISTILLERY_FILTER_ACTIVE = false;
+        resetDistilleryHighlights();
         return;
     }
 
     var nameSet = new Set(names);
-    
-    d3.selectAll('.distillery-point')
+    window.DISTILLERY_FILTER_ACTIVE = true;
+
+    var allPoints = d3.selectAll('.distillery-point');
+    allPoints
+        .classed('is-highlighted', function(d) { return nameSet.has(d.name); })
+        .style('pointer-events', function(d) { return nameSet.has(d.name) ? 'auto' : 'none'; });
+
+    allPoints
         .transition().duration(300)
-        .attr('opacity', function(d) { return nameSet.has(d.name) ? 1 : 0.1; })
-        .attr('r', function(d) { return nameSet.has(d.name) ? 6 : 3.5; })
-        .attr('fill', function(d) { return nameSet.has(d.name) ? '#FF4500' : '#d4af37'; }); // Orange-Red for selection
+        .style('opacity', function(d) { return nameSet.has(d.name) ? 1 : 0; })
+        .attr('width', function(d) { return nameSet.has(d.name) ? DISTILLERY_HIGHLIGHT_SIZE : DISTILLERY_SIZE; })
+        .attr('height', function(d) { return nameSet.has(d.name) ? DISTILLERY_HIGHLIGHT_SIZE : DISTILLERY_SIZE; })
+        .attr('fill', null);
+
+    if (typeof updateDistilleryPositions === 'function') {
+        updateDistilleryPositions();
+    }
+
+    if (typeof applyDistilleryFilterVisibility === 'function') {
+        applyDistilleryFilterVisibility();
+    }
     
     // Raise matched distilleries to the top so they appear over others
     d3.selectAll('.distillery-point').each(function(d) {
@@ -334,19 +393,28 @@ function drawDistilleries() {
 
     circles.exit().remove();
 
-    var enter = circles.enter().append('circle')
+    var enter = circles.enter().append('image')
         .attr('class', 'distillery-point')
-        .attr('r', 3.5)
-        .attr('fill', '#d4af37') // Gold color
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 0.5)
+        .attr('href', 'symbol/slice5.svg')
+        .attr('width', DISTILLERY_SIZE)
+        .attr('height', DISTILLERY_SIZE)
         .attr('cursor', 'pointer')
         .attr('opacity', 0.9);
 
     // Merge and update positions
     circles.merge(enter)
         .on('mouseover', function(event, d) {
-            d3.select(this).transition().duration(200).attr('r', 8).attr('stroke-width', 2);
+            var isHighlighted = d3.select(this).classed('is-highlighted');
+            var targetSize = isHighlighted ? DISTILLERY_HIGHLIGHT_SIZE : DISTILLERY_HOVER_SIZE;
+            var coords = projection(d.coords);
+            if (coords) {
+                d3.select(this)
+                    .transition().duration(200)
+                    .attr('width', targetSize)
+                    .attr('height', targetSize)
+                    .attr('x', coords[0] - targetSize / 2)
+                    .attr('y', coords[1] - targetSize / 2);
+            }
             
             // Tooltip
             tooltip.transition().duration(200).style('opacity', 1);
@@ -362,7 +430,17 @@ function drawDistilleries() {
                     .style("top", (event.pageY - 28) + "px");
         })
         .on('mouseout', function(event, d) {
-             d3.select(this).transition().duration(200).attr('r', 3.5).attr('stroke-width', 0.5);
+               var isHighlighted = d3.select(this).classed('is-highlighted');
+            var targetSize = isHighlighted ? DISTILLERY_HIGHLIGHT_SIZE : DISTILLERY_SIZE;
+            var coords = projection(d.coords);
+            if (coords) {
+                d3.select(this)
+                    .transition().duration(200)
+                    .attr('width', targetSize)
+                    .attr('height', targetSize)
+                    .attr('x', coords[0] - targetSize / 2)
+                    .attr('y', coords[1] - targetSize / 2);
+            }
              tooltip.transition().duration(500).style('opacity', 0);
              
              // Clear flows
@@ -401,10 +479,11 @@ function updateDistilleryPositions() {
              if (distance > Math.PI / 2 || !coords) {
                  d3.select(this).style('display', 'none');
              } else {
-                 d3.select(this)
-                    .attr('cx', coords[0])
-                    .attr('cy', coords[1])
-                    .style('display', 'block');
+                      var w = parseFloat(d3.select(this).attr('width')) || DISTILLERY_SIZE;
+                      d3.select(this)
+                          .attr('x', coords[0] - w / 2)
+                          .attr('y', coords[1] - w / 2)
+                          .style('display', 'block');
              }
         });
 
@@ -494,14 +573,19 @@ function showDistilleryInfo(d) {
     // Back button
     container.select('#back-to-stats-from-info').on('click', function() {
         // Reset map highlights
-        d3.selectAll('.distillery-point')
-            .transition().duration(200)
-            .attr('opacity', 0.9)
-            .attr('r', 3.5)
-            .attr('fill', '#d4af37');
+        resetDistilleryHighlights();
         
         svg.select('.distillery-flow-group').selectAll('*').remove();
             
         showCaskStatistics();
+    });
+
+    // Defensive event delegation for back button
+    container.on('click.backToStatsFromInfo', function(event) {
+        if (event && event.target && event.target.id === 'back-to-stats-from-info') {
+            resetDistilleryHighlights();
+            svg.select('.distillery-flow-group').selectAll('*').remove();
+            showCaskStatistics();
+        }
     });
 }

@@ -26,6 +26,13 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
             updateSliderPosition(lastYear, x);
         });
 
+    // Country hover outline (kept above other layers)
+    var countryHoverOutline = svg.append("path")
+        .attr("class", "country-hover-outline")
+        .attr("d", path)
+        .style("display", "none")
+        .style("pointer-events", "none");
+
     // ========================================================================
     // LAYER 2: COUNTRIES
     // ========================================================================
@@ -53,8 +60,18 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
             sel.attr("data-orig-stroke", origStroke || "#574c3b")
                .attr("data-orig-stroke-width", origStrokeWidth || 1)
                .attr("stroke", "#ffd166")
-               .attr("stroke-width", 2)
-               .raise();
+                    .attr("stroke-width", 2);
+            if (countryHoverOutline) {
+                countryHoverOutline.datum(d)
+                    .attr("d", path)
+                    .style("display", "block");
+            }
+            if (typeof bringForegroundLayers === 'function') {
+                bringForegroundLayers();
+            }
+            if (typeof applyDistilleryFilterVisibility === 'function') {
+                applyDistilleryFilterVisibility();
+            }
             tooltip.transition().duration(200).style("opacity", 1);
             var countryISO = d.properties.ADM0_A3;
             var countryName = d.properties.NAME;
@@ -99,6 +116,12 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
             var origStrokeWidth = sel.attr("data-orig-stroke-width") || 1;
             sel.attr("stroke", origStroke)
                .attr("stroke-width", origStrokeWidth);
+            if (countryHoverOutline) {
+                countryHoverOutline.style("display", "none");
+            }
+            if (typeof applyDistilleryFilterVisibility === 'function') {
+                applyDistilleryFilterVisibility();
+            }
             tooltip.transition().duration(500).style("opacity", 0);
         });
 
@@ -139,140 +162,102 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
 
     portFeatures = portFeatures || [];
 
-    // Draw port points as projected circles
-    svg.selectAll('.port-point')
+    // Port symbols with labels inside the SVG icon
+    var PORT_ICON_SIZE = 70;
+
+    var portNodes = svg.selectAll('.port-node')
         .data(portFeatures)
         .enter()
-        .append('path')
-        .attr('class', 'port-point')
-        .attr('d', path.pointRadius(4))
-        .attr('fill', '#1976d2')
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1.2)
-        .attr('opacity', 0.9)
+        .append('g')
+        .attr('class', 'port-node')
         .attr('pointer-events', 'none')
         .style('display', 'none');
 
-    // Port labels
-    svg.selectAll('.port-label')
-        .data(portFeatures)
-        .enter()
-        .append('text')
+    portNodes.append('image')
+        .attr('class', 'port-icon')
+        .attr('href', 'symbol/slice4.svg')
+        .attr('width', PORT_ICON_SIZE)
+        .attr('height', PORT_ICON_SIZE)
+        .attr('x', -PORT_ICON_SIZE / 2)
+        .attr('y', -PORT_ICON_SIZE / 2)
+        .attr('opacity', 0.95);
+
+    portNodes.append('text')
         .attr('class', 'port-label')
-        .text(function(d){ return d.properties && d.properties.name ? d.properties.name : ''; })
-        .attr('font-size', '10.5px')
+        .text(function(d){
+            var name = d.properties && d.properties.name ? d.properties.name : '';
+            return name
+                .replace(/^\s*Port of\s+/i, '')
+                .replace(/\s+Port\s*$/i, '');
+        })
+        .attr('font-size', '9px')
         .attr('font-family', 'Lora, serif')
-        .attr('fill', '#0f3057')
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1.6)
-        .attr('paint-order', 'stroke')
-        .attr('text-anchor', 'start')
+        .attr('fill', '#ffffff')
+        .attr('text-anchor', 'middle')
         .attr('alignment-baseline', 'middle')
-        .style('display', 'none');
+        .attr('dy', '0.35em');
 
-    // Helper to update label positions on projection changes with simple search
+    // Helper to update port symbol positions on projection changes
     window.updatePortLabelPositions = function() {
-        var labels = svg.selectAll('.port-label').nodes();
-        var points = svg.selectAll('.port-point').nodes();
-        if (!labels || labels.length === 0) return;
+        var nodes = svg.selectAll('.port-node').nodes();
+        if (!nodes || nodes.length === 0) return;
 
-        var placedBoxes = [];
         var currentScale = projection.scale();
         var shouldShow = currentScale >= ZOOM_THRESHOLD_PORTS;
-        
+
         // Get the current view center (where the projection points to)
         var rot = projection.rotate ? projection.rotate() : [0, 0, 0];
         var viewCenter = [-rot[0], -rot[1]]; // Point at center of map view
 
-        // Candidate offsets radiating from the port point
-        var candidates = [
-            { dx: 16, dy: -14 },
-            { dx: 16, dy: 14 },
-            { dx: -16, dy: -14 },
-            { dx: -16, dy: 14 },
-            { dx: 0, dy: -18 },
-            { dx: 0, dy: 18 },
-            { dx: 20, dy: 0 },
-            { dx: -20, dy: 0 }
-        ];
-
-        labels.forEach(function(node, idx) {
+        nodes.forEach(function(node) {
             var d = d3.select(node).datum();
             var coords = d && d.geometry && d.geometry.coordinates;
-            var pointNode = points[idx];
+            var rawName = d && d.properties && d.properties.name ? d.properties.name : '';
+            var dx = 0;
+            var dy = 0;
+            if (/Dublin/i.test(rawName)) {
+                dx = PORT_ICON_SIZE * 0.9;
+                dy = -PORT_ICON_SIZE * 0.3;
+            }
 
             // Hide if zoomed out or no coordinates
             if (!shouldShow || !coords) {
                 node.style.display = 'none';
-                if (pointNode) pointNode.style.display = 'none';
                 return;
             }
 
-            // Check if the port is visible on the front of the globe
             // Project the point to screen coordinates
             var c = projection(coords);
-            
-            // If projection returns null, the point is not visible (clipped)
             if (!c) {
                 node.style.display = 'none';
-                if (pointNode) pointNode.style.display = 'none';
                 return;
             }
-            
-            // Double-check: port should be less than 90 degrees away from view center
+
+            // Only show on front of globe
             var visible = d3.geoDistance(coords, viewCenter) < Math.PI / 2;
             if (!visible) {
                 node.style.display = 'none';
-                if (pointNode) pointNode.style.display = 'none';
                 return;
             }
 
             node.style.display = 'block';
-            if (pointNode) pointNode.style.display = 'block';
-
-            var bbox = node.getBBox();
-            var best = null;
-
-            candidates.forEach(function(pos) {
-                var x = c[0] + pos.dx;
-                var y = c[1] + pos.dy;
-                // Align bbox top-left for overlap math (baseline is middle)
-                var box = {
-                    x: x,
-                    y: y - bbox.height * 0.5,
-                    width: bbox.width,
-                    height: bbox.height
-                };
-
-                var overlapArea = 0;
-                for (var i = 0; i < placedBoxes.length; i++) {
-                    var pb = placedBoxes[i];
-                    var ox = Math.max(0, Math.min(box.x + box.width, pb.x + pb.width) - Math.max(box.x, pb.x));
-                    var oy = Math.max(0, Math.min(box.y + box.height, pb.y + pb.height) - Math.max(box.y, pb.y));
-                    overlapArea += (ox * oy);
-                }
-
-                // Favor positions closer to the point when overlaps tie
-                var distancePenalty = Math.abs(pos.dx) * 0.12 + Math.abs(pos.dy) * 0.16;
-                var score = overlapArea + distancePenalty;
-
-                if (best === null || score < best.score) {
-                    best = { x: x, y: y, box: box, score: score };
-                }
-            });
-
-            // Fallback to default if something went wrong
-            if (!best) {
-                best = { x: c[0] + 16, y: c[1] - 14, box: { x: c[0] + 16, y: c[1] - 14 - bbox.height * 0.5, width: bbox.width, height: bbox.height } };
-            }
-
-            node.setAttribute('transform', 'translate(' + best.x + ',' + best.y + ')');
-            placedBoxes.push(best.box);
+            node.setAttribute('transform', 'translate(' + (c[0] + dx) + ',' + (c[1] + dy) + ')');
         });
     };
     if (typeof window.updatePortLabelPositions === 'function') {
         window.updatePortLabelPositions();
     }
+
+    // Helper to update both port points and labels together
+    window.updatePortsAndLabels = function() {
+        try {
+            if (typeof window.updatePortLabelPositions === 'function') {
+                window.updatePortLabelPositions();
+            }
+        } catch (e) {
+            console.warn('Port update error:', e);
+        }
+    };
 
     // ========================================================================
     // LAYER 6: WINE REGIONS

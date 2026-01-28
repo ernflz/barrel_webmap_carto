@@ -72,29 +72,31 @@ function updateZoomDependentLayers() {
         svg.selectAll('.wine-region').style('display', 'none');
     }
 
-    // Show/hide ports and labels based on zoom level
+    // Show/hide ports based on zoom level
     if (currentScale >= ZOOM_THRESHOLD_PORTS) {
-        svg.selectAll('.port-point').style('display', 'block');
-        svg.selectAll('.port-label').style('display', 'block');
+        svg.selectAll('.port-node').style('display', 'block');
     } else {
-        svg.selectAll('.port-point').style('display', 'none');
-        svg.selectAll('.port-label').style('display', 'none');
+        svg.selectAll('.port-node').style('display', 'none');
     }
     
     // Show/hide distilleries based on zoom level
-    if (currentScale >= ZOOM_THRESHOLD_DISTILLERIES) {
+    if (currentScale >= ZOOM_THRESHOLD_DISTILLERIES || window.DISTILLERY_FILTER_ACTIVE) {
         svg.selectAll('.distillery-point').style('display', 'block');
     } else {
         svg.selectAll('.distillery-point').style('display', 'none');
+    }
+
+    if (typeof applyDistilleryFilterVisibility === 'function') {
+        applyDistilleryFilterVisibility();
     }
 }
 
 // Bring key point layers to the front (ports, labels, distilleries)
 function bringForegroundLayers() {
     try {
+        svg.selectAll('.country-hover-outline').raise();
         svg.selectAll('.wine-region').raise();
-        svg.selectAll('.port-point').raise();
-        svg.selectAll('.port-label').raise();
+        svg.selectAll('.port-node').raise();
         var distilleryGroup = svg.select('.distillery-group');
         if (!distilleryGroup.empty()) distilleryGroup.raise();
     } catch (e) {
@@ -128,10 +130,11 @@ window.addEventListener('resize', function() {
     path = d3.geoPath().projection(projection);
     svg.selectAll("path").attr("d", path);
 
-    // Update port points and labels on resize
+    // Update port icons/labels on resize
     try {
-        svg.selectAll('.port-point').attr('d', path.pointRadius(4));
-        if (typeof window.updatePortLabelPositions === 'function') {
+        if (typeof window.updatePortsAndLabels === 'function') {
+            window.updatePortsAndLabels();
+        } else if (typeof window.updatePortLabelPositions === 'function') {
             window.updatePortLabelPositions();
         }
     } catch (e) {
@@ -360,9 +363,14 @@ function rotateTo(centroid, scale, onEnd) {
                 try {
                     svg.selectAll('.sphere').attr('d', path);
                     svg.selectAll('.country').attr('d', path);
+                    svg.selectAll('.country-hover-outline').attr('d', path);
                     svg.selectAll('.wine-region').attr('d', path);
                     svg.selectAll('.lake').attr('d', path);
-                    svg.selectAll('.port-point').attr('d', path.pointRadius(4));
+                    if (typeof window.updatePortsAndLabels === 'function') {
+                        window.updatePortsAndLabels();
+                    } else if (typeof window.updatePortLabelPositions === 'function') {
+                        window.updatePortLabelPositions();
+                    }
                     // Update shipping route groups while preserving structure
                     svg.selectAll('.shipping-route-group').each(function(d) {
                         d3.select(this).selectAll('.shipping-route').attr('d', path);
@@ -374,8 +382,10 @@ function rotateTo(centroid, scale, onEnd) {
                     svg.selectAll('path').attr('d', path);
                 }
 
-                // Keep port labels aligned but debounced to avoid layout thrash
-                if (typeof window.updatePortLabelPositionsDebounced === 'function') {
+                // Keep port labels aligned during animation
+                if (typeof window.updatePortsAndLabels === 'function') {
+                    window.updatePortsAndLabels();
+                } else if (typeof window.updatePortLabelPositionsDebounced === 'function') {
                     window.updatePortLabelPositionsDebounced();
                 }
 
@@ -469,8 +479,26 @@ function zoomToCountry(countryFeature) {
     projection.rotate(prevRotate);
     projection.scale(prevScale);
 
+    // Offset the rotation so the country is not hidden behind the cask stats panel
+    var targetCentroid = centroid;
+    try {
+        var statsPanel = document.getElementById('cask-stats-panel');
+        var panelWidth = statsPanel ? (statsPanel.offsetWidth || 0) : 0;
+        var panelMargin = 20; // extra spacing in pixels
+        var offsetPx = panelWidth / 2 + panelMargin;
+
+        var scaleForCalc = Math.max(1, desiredScale || projection.scale());
+        var offsetRad = offsetPx / scaleForCalc;
+        var offsetDeg = (offsetRad * 180) / Math.PI;
+
+        // Shift longitude so the country appears left of the panel
+        targetCentroid = [centroid[0] + offsetDeg, centroid[1]];
+    } catch (e) {
+        targetCentroid = centroid;
+    }
+
     // Animate to the target rotation and scale
-    rotateTo(centroid, desiredScale);
+    rotateTo(targetCentroid, desiredScale);
 
     // Update displayed routes (show only relevant routes for this country)
     if (relevant.length > 0) {

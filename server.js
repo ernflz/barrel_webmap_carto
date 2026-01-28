@@ -13,6 +13,7 @@ const server = http.createServer((req, res) => {
     if (ext === '.css') contentType = 'text/css';
     if (ext === '.json') contentType = 'application/json';
     if (ext === '.csv') contentType = 'text/csv';
+    if (ext === '.svg') contentType = 'image/svg+xml';
     
     fs.readFile(filePath, (err, data) => {
         if (err) {
