@@ -204,7 +204,7 @@ function updateRoutes(dataToShow) {
     // Append path and interaction handlers to each route group
     enter.each(function(d) {
         var g = d3.select(this);
-        var strokeColor = d.properties.color || '#922029';
+        var strokeColor = d.properties.color || '#1f6b18';
         
         // Calculate opacity intensity based on trade data
         var trade = d.properties.tradeData || { qty: 0, value: 0 };
@@ -218,10 +218,10 @@ function updateRoutes(dataToShow) {
             .attr('d', path)
             .attr('fill', 'none')
             .attr('stroke', strokeColor)
-            .attr('stroke-width', 12)
+            .attr('stroke-width', 18)
             .attr('stroke-linecap', 'round')
             .attr('stroke-linejoin', 'round')
-            .attr('opacity', 0.04 * baseOpacityMultiplier)
+            .attr('opacity', 0.20 * baseOpacityMultiplier)
             .style('pointer-events', 'stroke');
 
         // Middle layer - creates taper
@@ -230,10 +230,10 @@ function updateRoutes(dataToShow) {
             .attr('d', path)
             .attr('fill', 'none')
             .attr('stroke', strokeColor)
-            .attr('stroke-width', 7)
+            .attr('stroke-width', 12)
             .attr('stroke-linecap', 'round')
             .attr('stroke-linejoin', 'round')
-            .attr('opacity', 0.08 * baseOpacityMultiplier)
+            .attr('opacity', 0.20 * baseOpacityMultiplier)
             .style('pointer-events', 'stroke');
 
         // Inner layer (thickest in middle)
@@ -242,10 +242,22 @@ function updateRoutes(dataToShow) {
             .attr('d', path)
             .attr('fill', 'none')
             .attr('stroke', strokeColor)
-            .attr('stroke-width', 4)
+            .attr('stroke-width', 8)
             .attr('stroke-linecap', 'round')
             .attr('stroke-linejoin', 'round')
-            .attr('opacity', 0.15 * baseOpacityMultiplier)
+            .attr('opacity', 0.10 * baseOpacityMultiplier)
+            .style('pointer-events', 'stroke');
+
+        g.append('path').attr('class', 'shipping-route dotted')
+            .datum(d)
+            .attr('d', path)
+            .attr('fill', 'none')
+            .attr('stroke', '#d4c6b7')
+            .attr('stroke-width', 3)
+            .attr('stroke-linecap', 'round')
+            .attr('stroke-linejoin', 'round')
+            .attr('opacity', 0.5 * baseOpacityMultiplier)
+            .attr('stroke-dasharray', '4 8')
             .style('pointer-events', 'stroke');
         
         // Store the base opacity multiplier for hover/restore operations
@@ -265,11 +277,11 @@ function updateRoutes(dataToShow) {
                 
                 // Enhance all layers on hover
                 routeGroup.select('.shipping-route.outer')
-                    .attr('stroke-width', 16).attr('opacity', 0.12 * opacityMult);
+                    .attr('stroke-width', 20).attr('opacity', 0.12 * opacityMult);
                 routeGroup.select('.shipping-route.middle')
-                    .attr('stroke-width', 10).attr('opacity', 0.24 * opacityMult);
+                    .attr('stroke-width', 14).attr('opacity', 0.24 * opacityMult);
                 routeGroup.select('.shipping-route.primary')
-                    .attr('stroke-width', 6).attr('opacity', 0.40 * opacityMult);
+                    .attr('stroke-width', 9).attr('opacity', 0.40 * opacityMult);
                 
                 tooltip.transition().duration(200).style('opacity', 1);
 
@@ -362,6 +374,9 @@ function rotateTo(centroid, scale, onEnd) {
                 // Update only the essential path layers each frame to reduce DOM cost
                 try {
                     svg.selectAll('.sphere').attr('d', path);
+                    svg.selectAll('.wooden-background').attr('d', path);
+                    var scaleFactor = initialScale / projection.scale();
+                    svg.selectAll('.globe-outline').attr('d', path).attr('stroke-width', 2.5 * scaleFactor);
                     svg.selectAll('.country').attr('d', path);
                     svg.selectAll('.country-hover-outline').attr('d', path);
                     svg.selectAll('.wine-region').attr('d', path);

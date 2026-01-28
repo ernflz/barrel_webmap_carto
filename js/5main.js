@@ -15,6 +15,33 @@
 // ============================================================================
 
 // ============================================================================
+// DATA TABS FUNCTIONALITY (Countries & Wine Regions)
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    var dataTabButtons = document.querySelectorAll('.data-tab-btn');
+    
+    dataTabButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var targetTab = this.getAttribute('data-tab');
+            
+            // Remove active class from all buttons and tabs
+            dataTabButtons.forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.data-tab-content').forEach(function(content) {
+                content.classList.remove('active');
+            });
+            
+            // Add active class to clicked button and corresponding tab
+            this.classList.add('active');
+            document.getElementById(targetTab).classList.add('active');
+        });
+    });
+});
+
+// ============================================================================
 // HELP MODAL FUNCTIONALITY
 // ============================================================================
 

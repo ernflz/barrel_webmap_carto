@@ -27,10 +27,8 @@ body {
     top: 12px;
     right: 12px;
     width: clamp(220px, 22vw, 320px);
-    max-height: clamp(220px, 55vh, 520px);
-    overflow-y: auto;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid #007acc;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid #9a8770;
     border-radius: 6px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
     padding: 10px 12px;
@@ -65,9 +63,9 @@ body {
 
 /* Zoom controls (bottom-left) */
 .zoom-controls {
-    position: absolute;
-    left: 12px;
-    bottom: 12px;
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -78,8 +76,8 @@ body {
     width: 44px;
     height: 44px;
     border-radius: 8px;
-    border: 1px solid #005a9e;
-    background: #007acc;
+    border: 1px solid #8a7456;
+    background: #a89378;
     color: white;
     font-size: 20px;
     font-weight: 700;
@@ -89,7 +87,7 @@ body {
 }
 
 .zoom-controls button:hover {
-    background: #005a9e;
+    background: #8a7456;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
@@ -102,15 +100,20 @@ body {
 /* =========================================================================== */
 
 #legend {
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    bottom: 12px;
     width: clamp(240px, 28vw, 420px);
     min-width: 220px;
     padding: 16px;
-    background-color: #c1c0c0;
-    border-right: 5px solid gray;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid #9a8770;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
     z-index: 10;
     display: flex;
     flex-direction: column;
-    height: 100vh;
     overflow: hidden;
 }
 
@@ -120,7 +123,7 @@ body {
     align-items: stretch;
     margin-bottom: 0px;
     padding-bottom: 8px;
-    border-bottom: 1px solid rgba(0,0,0,0.12);
+    border-bottom: 2px solid #a89378;
 }
 
 .title-row {
@@ -178,9 +181,9 @@ body {
 }
 
 .tab-btn.active {
-    background: #007acc;
+    background: #a89378;
     color: white;
-    border-color: #007acc;
+    border-color: #9a8770;
 }
 
 .tab-content {
@@ -201,15 +204,75 @@ body {
     justify-content: center;
 }
 
+/* =========================================================================== */
+/* DATA TABS (Countries & Wine Regions)                                       */
+/* =========================================================================== */
+
+#data-tabs-container {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #a89378;
+}
+
+#data-tab-buttons {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+}
+
+.data-tab-btn {
+    flex: 1;
+    background: #e0e0e0;
+    color: #333;
+    border: 2px solid #999;
+    border-bottom: none;
+    padding: 10px 12px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Lora', serif;
+    transition: all 0.2s ease;
+}
+
+.data-tab-btn:hover {
+    background: #d0d0d0;
+}
+
+.data-tab-btn.active {
+    background: #f9f9f9;
+    color: #333;
+    border-color: #a89378;
+    border-bottom: 2px solid #f9f9f9;
+    position: relative;
+    z-index: 2;
+}
+
+.data-tab-content {
+    display: none;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 2px solid #a89378;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    margin-top: -2px;
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.data-tab-content.active {
+    display: block;
+}
+
 /* Legend content */
 .legend-section {
     background: transparent;
     border: none;
     border-radius: 0;
-    padding: 9px;
-    margin: 4px auto 0;
+    padding: 9px 12px;
+    margin: 4px 0 0;
     width: 100%;
-    max-width: 320px;
 }
 
 .legend-section h2 {
@@ -231,10 +294,10 @@ body {
 }
 
 .legend-swatch {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     display: inline-block;
-    flex: 0 0 18px;
+    flex: 0 0 24px;
     margin-top: 2px;
 }
 
@@ -242,26 +305,26 @@ body {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    font-size: 13px;
+    font-size: 15px;
     color: #444;
 }
 
 .legend-text strong {
-    font-size: 13px;
+    font-size: 15px;
     color: #333;
 }
 
 .legend-distillery {
-    width: 22px;
-    height: 22px;
-    flex: 0 0 22px;
+    width: 35px;
+    height: 35px;
+    flex: 0 0 35px;
     background: url('symbol/slice5.svg') center/contain no-repeat;
 }
 
 .legend-port {
-    width: 22px;
-    height: 22px;
-    flex: 0 0 22px;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
     background: url('symbol/slice4.svg') center/contain no-repeat;
 }
 
@@ -314,8 +377,8 @@ body {
 
 #wine-region-dropdown:focus {
     outline: none;
-    border-color: #007acc;
-    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.1);
+    border-color: #9a8770;
+    box-shadow: 0 0 0 2px rgba(168, 147, 120, 0.1);
 }
 
 @keyframes fadeIn {
@@ -324,7 +387,7 @@ body {
 }
 
 #sidebar-toggle {
-    background: #007acc;
+    background: #a89378;
     color: white;
     border: none;
     padding: 6px 10px;
@@ -343,7 +406,7 @@ body {
     left: 10px;
     top: 10px;
     z-index: 9999;
-    background: #007acc;
+    background: #a89378;
     color: white;
     border: none;
     padding: 8px 12px;
@@ -368,7 +431,7 @@ body {
     position: relative;
     height: 100%;
     width: 100%;
-    background: #847961;
+    background: url('symbol/wooden-floor-background.jpg') center/cover no-repeat;
     overflow: hidden;
 }
 
@@ -391,12 +454,14 @@ body {
 
 .country {
     fill: #ada096;
+    fill-opacity: 0.5;
     stroke: #574c3b;
     stroke-width: 1px;
 }
 
 .country:hover {
     fill: #7d3518;
+    fill-opacity: 0.5;
     stroke: #fff;
     stroke-width: 1px;
     cursor: pointer;
@@ -407,7 +472,7 @@ body {
     fill: #8f8072;
     stroke: #574c3b;
     stroke-width: 1px;
-    fill-opacity: 0.95;
+    fill-opacity: 0.5;
 }
 
 .country.has-data:hover {
@@ -459,17 +524,22 @@ body {
     position: absolute;
     text-align: left;
     padding: 10px;
-    font-family: sans-serif;
+    font-family: 'Lora', serif;
     font-size: 12px;
-    background: rgba(0, 0, 0, 0.8);
+    background: #a89378;
     color: #fff;
-    border: 1px solid #fff;
+    border: 2px solid #8a7456;
     border-radius: 4px;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s;
-    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px #a89378, 0 0 0 5px #6d5a42, 2px 2px 6px rgba(0, 0, 0, 0.5);
     z-index: 1000;
+}
+
+.tooltip strong,
+.tooltip span {
+    color: #fff !important;
 }
 
 /* =========================================================================== */
@@ -494,12 +564,12 @@ body {
 }
 
 .country-items-container::-webkit-scrollbar-thumb {
-    background: #007acc;
+    background: #a89378;
     border-radius: 3px;
 }
 
 .country-items-container::-webkit-scrollbar-thumb:hover {
-    background: #005a9e;
+    background: #8a7456;
 }
 
 .country-item {
@@ -515,14 +585,14 @@ body {
 }
 
 .country-item:hover {
-    background: rgba(0, 122, 204, 0.08);
+    background: rgba(168, 147, 120, 0.08);
 }
 
 .country-checkbox {
     width: 16px;
     height: 16px;
     cursor: pointer;
-    accent-color: #007acc;
+    accent-color: #a89378;
 }
 
 .country-label {
@@ -538,14 +608,14 @@ body {
 
 .country-search:focus {
     outline: none;
-    border-color: #007acc !important;
-    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.1);
+    border-color: #9a8770 !important;
+    box-shadow: 0 0 0 2px rgba(168, 147, 120, 0.1);
 }
 
 .country-btn {
     display: none;
     flex: 1;
-    background: #007acc;
+    background: #a89378;
     color: #fff;
     border: none;
     padding: 6px 10px;
@@ -557,7 +627,7 @@ body {
 }
 
 .country-btn:hover {
-    background: #005a9e;
+    background: #8a7456;
 }
 
 .country-btn:active {
@@ -571,9 +641,9 @@ body {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #007acc;
+    background: #a89378;
     color: white;
-    border: 2px solid #005a9e;
+    border: 2px solid #8a7456;
     font-size: 18px;
     font-weight: bold;
     cursor: pointer;
@@ -585,7 +655,7 @@ body {
 }
 
 .help-button:hover {
-    background: #005a9e;
+    background: #8a7456;
     transform: scale(1.1);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -618,7 +688,7 @@ body {
 .modal-content {
     background-color: #f9f9f9;
     padding: 30px;
-    border: 2px solid #007acc;
+    border: 2px solid #9a8770;
     border-radius: 8px;
     width: min(90vw, 640px);
     max-height: min(80vh, 720px);
@@ -667,7 +737,7 @@ body {
 }
 
 .modal-content strong {
-    color: #007acc;
+    color: #9a8770;
 }
 
 /* Ensure ocean sphere has no outline ring */
@@ -675,8 +745,13 @@ body {
     stroke: none;
 }
 
+/* Wooden background layer - add stroke for globe edge */
+.wooden-background {
+    stroke: #574c3b;
+    stroke-width: 2px;
+}
+
 /* Cask statistics panel sizing */
 #cask-stats-panel {
     width: clamp(220px, 24vw, 360px);
-    max-height: clamp(220px, 60vh, 560px);
 }

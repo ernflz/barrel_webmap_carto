@@ -37,6 +37,9 @@ var drag = d3.drag()
         // Only update essential layers (countries and shipping routes)
         try {
             svg.selectAll(".sphere").attr("d", path);
+            svg.selectAll(".wooden-background").attr("d", path);
+            var scaleFactor = initialScale / projection.scale();
+            svg.selectAll(".globe-outline").attr("d", path).attr("stroke-width", 2.5 * scaleFactor);
             svg.selectAll(".country").attr("d", path);
             svg.selectAll(".country-hover-outline").attr("d", path);
             // Update route groups properly (preserves multi-layer structure)
@@ -129,6 +132,9 @@ var zoom = d3.zoom()
         // Only update essential layers (countries and shipping routes)
         try {
             svg.selectAll(".sphere").attr("d", path);
+            svg.selectAll(".wooden-background").attr("d", path);
+            var scaleFactor = initialScale / projection.scale();
+            svg.selectAll(".globe-outline").attr("d", path).attr("stroke-width", 2.5 * scaleFactor);
             svg.selectAll(".country").attr("d", path);
             svg.selectAll(".country-hover-outline").attr("d", path);
             // Update route groups properly (preserves multi-layer structure)
@@ -654,55 +660,17 @@ function buildCountriesWithRoutesList() {
 
     var countriesArr = Array.from(countrySet).sort();
 
-    // Remove existing list if present (search globally to avoid duplicates)
+    // Remove existing list if present
     var existing = document.querySelector('.countries-routes-list');
     if (existing) existing.remove();
 
     var listDiv = document.createElement('div');
     listDiv.className = 'countries-routes-list';
-    listDiv.style.marginTop = '15px';
-    listDiv.style.paddingTop = '15px';
-    listDiv.style.borderTop = '2px solid #007acc';
 
-    // Create dropdown header button
-    var dropdownBtn = document.createElement('button');
-    dropdownBtn.style.width = '100%';
-    dropdownBtn.style.padding = '10px 12px';
-    dropdownBtn.style.backgroundColor = '#007acc';
-    dropdownBtn.style.color = 'white';
-    dropdownBtn.style.border = 'none';
-    dropdownBtn.style.borderRadius = '4px';
-    dropdownBtn.style.fontSize = '13px';
-    dropdownBtn.style.fontWeight = 'bold';
-    dropdownBtn.style.cursor = 'pointer';
-    dropdownBtn.style.display = 'flex';
-    dropdownBtn.style.justifyContent = 'space-between';
-    dropdownBtn.style.alignItems = 'center';
-    dropdownBtn.style.transition = 'background-color 0.2s ease';
-    
-    var btnText = document.createElement('span');
-    btnText.textContent = 'Countries with Routes (' + countriesArr.length + ')';
-    
-    var dropdownIcon = document.createElement('span');
-    dropdownIcon.textContent = '▼';
-    dropdownIcon.style.fontSize = '10px';
-    dropdownIcon.style.transition = 'transform 0.2s ease';
-    
-    dropdownBtn.appendChild(btnText);
-    dropdownBtn.appendChild(dropdownIcon);
-    
-    listDiv.appendChild(dropdownBtn);
-
-    // Create dropdown content container
+    // Create content container (no dropdown button, always visible)
     var dropdownContent = document.createElement('div');
     dropdownContent.className = 'countries-dropdown-content';
-    dropdownContent.style.display = 'none';
-    dropdownContent.style.marginTop = '10px';
-    dropdownContent.style.padding = '10px';
-    dropdownContent.style.backgroundColor = '#f9f9f9';
-    dropdownContent.style.borderRadius = '4px';
-    dropdownContent.style.border = '1px solid #ddd';
-    dropdownContent.style.maxHeight = '300px';
+    dropdownContent.style.display = 'block';
     dropdownContent.style.overflowY = 'auto';
 
     // Create table grid
@@ -733,7 +701,7 @@ function buildCountriesWithRoutesList() {
     selectAllLabel.style.fontWeight = 'bold';
     selectAllLabel.style.display = 'flex';
     selectAllLabel.style.alignItems = 'center';
-    selectAllLabel.style.borderBottom = '2px solid #007acc';
+    selectAllLabel.style.borderBottom = '2px solid #a89378';
     selectAllLabel.style.marginBottom = '8px';
     selectAllLabel.textContent = 'Select All / Deselect All';
 
@@ -829,38 +797,14 @@ function buildCountriesWithRoutesList() {
 
     // Toggle dropdown on button click
     var isOpen = false;
-    dropdownBtn.addEventListener('click', function() {
-        isOpen = !isOpen;
-        if (isOpen) {
-            dropdownContent.style.display = 'block';
-            dropdownIcon.style.transform = 'rotate(180deg)';
-            dropdownBtn.style.backgroundColor = '#005a9e';
-        } else {
-            dropdownContent.style.display = 'none';
-            dropdownIcon.style.transform = 'rotate(0deg)';
-            dropdownBtn.style.backgroundColor = '#007acc';
-        }
-    });
+    listDiv.appendChild(dropdownContent);
 
-    // Hover effect on button
-    dropdownBtn.addEventListener('mouseover', function() {
-        if (!isOpen) {
-            dropdownBtn.style.backgroundColor = '#005a9e';
-        }
-    });
-
-    dropdownBtn.addEventListener('mouseout', function() {
-        if (!isOpen) {
-            dropdownBtn.style.backgroundColor = '#007acc';
-        }
-    });
-
-    // Place the list right after the sidebar text if present, otherwise append to fallback container
-    if (sidebarPara) {
-        insertParent.insertBefore(listDiv, sidebarPara.nextSibling);
-    } else {
-        insertParent.appendChild(listDiv);
+    // Append to the countries tab container
+    var countriesTab = document.getElementById('countries-tab');
+    if (countriesTab) {
+        countriesTab.appendChild(listDiv);
     }
+    
     window.COUNTRY_CHECKBOXES = countryCheckboxes;
 }
 

@@ -22,25 +22,30 @@
             <div id="legend-header">
                 <div class="sidebar-title">
                     <div class="title-row">
-                        <h1>Where Does the Barrel Roll?🛢️</h1>
+                        <h1>Where Does the Barrel Roll?<img src="symbol/slice1.svg" alt="barrel" style="height: 1em; vertical-align: middle;"></h1>
                         <button id="help-btn" class="help-button" title="Help">?</button>
                     </div>
                     <p class="sidebar-desc">This is a placeholder for sidebar information. You can add instructions, context, or any other relevant details here.</p>
                 </div>
             </div>
-            <div id="tab-controls-content" class="tab-content">
-                <p id="sidebar-note">Choose a wine region to see the disterilleries</p>
-                <div id="wine-region-control">
-                    <label for="wine-region-dropdown">Wine Region:</label>
-                    <select id="wine-region-dropdown">
-                        <option value="">-- Select a wine region --</option>
-                        <option value="Madeira">Madeira</option>
-                        <option value="Port">Port</option>
-                        <option value="Sherry">Sherry</option>
-                        <option value="Marsala">Marsala</option>
-                        <option value="Bordeaux">Bordeaux</option>
-                    </select>
+            
+            <!-- Tabbed Interface for Countries and Wine Regions -->
+            <div id="data-tabs-container">
+                <div id="data-tab-buttons">
+                    <button class="data-tab-btn active" data-tab="countries-tab">Countries with Routes</button>
+                    <button class="data-tab-btn" data-tab="wine-regions-tab">Wine Regions</button>
                 </div>
+                
+                <div id="countries-tab" class="data-tab-content active">
+                    <!-- Countries with routes list will be inserted here by JavaScript -->
+                </div>
+                
+                <div id="wine-regions-tab" class="data-tab-content">
+                    <!-- Wine regions list will be inserted here by JavaScript -->
+                </div>
+            </div>
+            
+            <div id="tab-controls-content" class="tab-content" style="display: none;">
                 </div>
             <div id="legend-content">
                 <div class="legend-section">
@@ -66,7 +71,7 @@
                     <div class="legend-item">
                         <span class="legend-swatch legend-country"></span>
                         <div class="legend-text">
-                            <strong>Countries</strong>
+                            <strong>Countries with data</strong>
                         </div>
                     </div>
                 </div>
@@ -116,6 +121,7 @@
     <script src="js/3layer_logic.js"></script>
     <script src="js/6distillery_layer.js"></script>
     <script src="js/4ui_controls.js"></script>
+    <script src="js/7wine_regions_list.js"></script>
     <script src="js/5main.js"></script>
 </body>
 </html>

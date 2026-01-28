@@ -282,7 +282,7 @@ function filterDistilleriesByCask(caskName, options) {
         <div style="margin-bottom:10px; cursor:pointer; color:#d4af37;" id="back-to-stats">← Back to Statistics</div>
         <h2>${displayTitle}</h2>
         <p>${intro}</p>
-        <ul style="max-height: 400px; overflow-y: auto;">
+        <ul>
             ${matches.length ? matches.map(d => `
                 <li style="margin-bottom:5px; cursor:pointer;" class="distillery-link" data-name="${d.name.replace(/"/g, '&quot;')}" data-region="${(d.region || '').replace(/"/g, '&quot;')}">
                     <strong>${d.name}</strong> (${d.region})

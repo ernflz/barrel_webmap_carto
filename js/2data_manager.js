@@ -132,7 +132,7 @@ Promise.all([
                         name: routeName,
                         info: routeName,
                         value: feat.properties && (feat.properties.Shape_Length || feat.properties.Shape_Length) || 0,
-                        color: '#E63946',
+                        color: '#8c0c17',
                         path: coords,
                         countries: [reporterISO, partnerISO],
                         year: defaultYear,
@@ -154,24 +154,12 @@ Promise.all([
 
     // Build and display the countries with routes list in the sidebar
     buildCountriesWithRoutesList();
+    
+    // Build and display the wine regions list in the sidebar
+    buildWineRegionsList();
 
     // Initialize Distillery Layer
     if (typeof initDistilleryLayer === 'function') initDistilleryLayer();
-
-    // ========================================================================
-    // STEP 5: ADD WINE REGION DROPDOWN EVENT LISTENER
-    // ========================================================================
-    
-    var wineRegionDropdown = document.getElementById('wine-region-dropdown');
-    if (wineRegionDropdown && typeof zoomToWineRegion === 'function') {
-        wineRegionDropdown.addEventListener('change', function(e) {
-            var selectedRegion = e.target.value;
-            if (selectedRegion) {
-                console.log("Selected wine region:", selectedRegion);
-                zoomToWineRegion(selectedRegion);
-            }
-        });
-    }
 
 }).catch(function(error) {
     console.error("Error loading data:", error);

@@ -7,15 +7,28 @@
  */
 function drawLayers(countries, lakes, wineRegions, portFeatures) {
     // ========================================================================
-    // LAYER 1: OCEAN BACKGROUND
+    // LAYER 1: WOODEN TEXTURE BACKGROUND
     // ========================================================================
 
-    // Ocean layer resets map when clicked
+    // Wooden texture pattern definition
+    svg.append("defs")
+        .append("pattern")
+        .attr("id", "woodenTexture")
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("width", width)
+        .attr("height", height)
+        .append("image")
+        .attr("href", "symbol/wooden-floor-background.jpg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("preserveAspectRatio", "xMidYMid slice");
+
+    // Wooden background sphere (clickable to reset)
     svg.append("path")
         .datum({ type: "Sphere" })
-        .attr("class", "sphere")
+        .attr("class", "wooden-background")
         .attr("d", path)
-        .attr("fill", "#b1b4b3")
+        .attr("fill", "url(#woodenTexture)")
         .attr("stroke", "none")
         .on("click", function() {
             updateRoutes(GLOBAL_SHIPPING_DATA); // Show ALL routes
@@ -25,6 +38,16 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
             var lastYear = ALL_YEARS[ALL_YEARS.length - 1];
             updateSliderPosition(lastYear, x);
         });
+
+    // Globe edge outline (on top of texture)
+    svg.append("path")
+        .datum({ type: "Sphere" })
+        .attr("class", "globe-outline")
+        .attr("d", path)
+        .attr("fill", "none")
+        .attr("stroke", "#574c3b")
+        .attr("stroke-width", 2.5)
+        .style("pointer-events", "none");
 
     // Country hover outline (kept above other layers)
     var countryHoverOutline = svg.append("path")
