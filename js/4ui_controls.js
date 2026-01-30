@@ -600,6 +600,31 @@ updateSliderPosition(initialYear, x);
 // ============================================================================
 
 /**
+ * Minimize/hide the sidebar
+ */
+function minimizeSidebar() {
+    var legend = document.getElementById('legend');
+    if (!legend || legend.style.display === 'none') return;
+    
+    legend.style.display = 'none';
+    document.body.classList.add('sidebar-hidden');
+    
+    if (!document.getElementById('sidebar-show')) {
+        var showBtn = document.createElement('button');
+        showBtn.id = 'sidebar-show';
+        showBtn.className = 'sidebar-show-button';
+        showBtn.textContent = 'Show';
+        document.body.appendChild(showBtn);
+
+        showBtn.addEventListener('click', function() {
+            legend.style.display = '';
+            document.body.classList.remove('sidebar-hidden');
+            showBtn.remove();
+        });
+    }
+}
+
+/**
  * Handle sidebar toggle (show/hide legend)
  */
 (function() {
@@ -763,6 +788,10 @@ function buildCountriesWithRoutesList() {
             var countryFeature = window.COUNTRY_FEATURES_MAP && window.COUNTRY_FEATURES_MAP[countryCode];
             if (countryFeature) {
                 zoomToCountry(countryFeature);
+                // Minimize sidebar after clicking
+                if (typeof minimizeSidebar === 'function') {
+                    minimizeSidebar();
+                }
             }
         });
 

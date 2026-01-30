@@ -64,19 +64,26 @@ body {
 /* Zoom controls (bottom-left) */
 .zoom-controls {
     position: fixed;
-    left: 24px;
+    left: calc(clamp(240px, 28vw, 420px) + 60px);
     bottom: 24px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    z-index: 1001;
+    z-index: 10001;
+    transition: left 0.3s ease;
+}
+
+/* When sidebar is hidden, move zoom buttons to the left */
+#legend[style*="display: none"] ~ #mapContainer .zoom-controls,
+body.sidebar-hidden .zoom-controls {
+    left: 24px;
 }
 
 .zoom-controls button {
     width: 44px;
     height: 44px;
-    border-radius: 8px;
-    border: 1px solid #8a7456;
+    border-radius: 50%;
+    border: 2px solid #8a7456;
     background: #a89378;
     color: white;
     font-size: 20px;
@@ -114,7 +121,8 @@ body {
     z-index: 10;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #legend-header {
@@ -198,10 +206,11 @@ body {
 }
 
 #legend-content {
-    overflow: visible;
+    overflow-y: auto;
     margin-top: 4px;
     display: flex;
     justify-content: center;
+    flex: 1;
 }
 
 /* =========================================================================== */
@@ -218,6 +227,7 @@ body {
     display: flex;
     gap: 4px;
     margin-bottom: 0;
+    border-bottom: 2px solid #a89378;
 }
 
 .data-tab-btn {

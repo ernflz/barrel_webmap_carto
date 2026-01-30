@@ -57,7 +57,7 @@ window.updatePortLabelPositionsDebounced = debounce(function() {
 // Zoom thresholds for showing detailed layers
 var ZOOM_THRESHOLD_DISTILLERIES = initialScale * 3.0; // Show distilleries at 3x zoom
 var ZOOM_THRESHOLD_WINE_REGIONS = initialScale * 2.5; // Show wine regions at 2.5x zoom
-var ZOOM_THRESHOLD_PORTS = initialScale * 1.6; // Show ports/labels at ~1.6x zoom
+var ZOOM_THRESHOLD_PORTS = initialScale * 2.5; // Show ports/labels at ~2.5x zoom
 
 /**
  * Update visibility of zoom-dependent layers based on current scale
@@ -124,7 +124,7 @@ window.addEventListener('resize', function() {
     // Recalculate zoom thresholds
     ZOOM_THRESHOLD_DISTILLERIES = initialScale * 3.0;
     ZOOM_THRESHOLD_WINE_REGIONS = initialScale * 2.5;
-    ZOOM_THRESHOLD_PORTS = initialScale * 1.6;
+    ZOOM_THRESHOLD_PORTS = initialScale * 2.5;
 
     // Recalculate path and redraw all elements
     path = d3.geoPath().projection(projection);
@@ -494,23 +494,8 @@ function zoomToCountry(countryFeature) {
     projection.rotate(prevRotate);
     projection.scale(prevScale);
 
-    // Offset the rotation so the country is not hidden behind the cask stats panel
+    // Center the country in the middle of the screen
     var targetCentroid = centroid;
-    try {
-        var statsPanel = document.getElementById('cask-stats-panel');
-        var panelWidth = statsPanel ? (statsPanel.offsetWidth || 0) : 0;
-        var panelMargin = 20; // extra spacing in pixels
-        var offsetPx = panelWidth / 2 + panelMargin;
-
-        var scaleForCalc = Math.max(1, desiredScale || projection.scale());
-        var offsetRad = offsetPx / scaleForCalc;
-        var offsetDeg = (offsetRad * 180) / Math.PI;
-
-        // Shift longitude so the country appears left of the panel
-        targetCentroid = [centroid[0] + offsetDeg, centroid[1]];
-    } catch (e) {
-        targetCentroid = centroid;
-    }
 
     // Animate to the target rotation and scale
     rotateTo(targetCentroid, desiredScale);
@@ -576,23 +561,26 @@ function zoomToWineRegion(regionName) {
     // Ensure regions are visible during zoom animation
     svg.selectAll('.wine-region').style('display', 'block');
 
-    // Compute a horizontal offset so the selected region is not hidden
-    // behind the cask statistics panel (usually top-right). We convert
-    // an approximate pixel offset into an angular longitude offset
-    // using the current projection scale. This is a pragmatic approximation
-    // that keeps the region visible to the left of the stats panel.
+    // Compute horizontal offset to center the region in the visible map area
+    // accounting for both the sidebar on the left and stats panel on the right
     try {
+        var legend = document.getElementById('legend');
         var statsPanel = document.getElementById('cask-stats-panel');
-        var panelWidth = statsPanel ? (statsPanel.offsetWidth || 0) : 0;
-        var panelMargin = 20; // additional spacing in pixels
-        var offsetPx = panelWidth / 2 + panelMargin;
+        
+        // Get widths of sidebar and stats panel
+        var legendWidth = (legend && legend.style.display !== 'none') ? (legend.offsetWidth || 0) : 0;
+        var statsPanelWidth = statsPanel ? (statsPanel.offsetWidth || 0) : 0;
+        
+        // Calculate the center of the visible area between the panels
+        var totalOffset = (statsPanelWidth - legendWidth) / 2;
+        var offsetPx = totalOffset;
 
         // Convert pixel offset to radians using scale (orthographic approx)
         var scaleForCalc = Math.max(1, desiredScale || projection.scale());
         var offsetRad = offsetPx / scaleForCalc; // ~ radians
         var offsetDeg = (offsetRad * 180) / Math.PI;
 
-        // Shift longitude so the anchor appears shifted left on screen (away from right panel)
+        // Adjust longitude to center in visible area
         var adjustedAnchor = [anchor[0] + offsetDeg, anchor[1]];
 
         rotateTo(adjustedAnchor, desiredScale, function() {

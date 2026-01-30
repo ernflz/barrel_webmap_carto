@@ -20,23 +20,34 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     var dataTabButtons = document.querySelectorAll('.data-tab-btn');
+    var activeTab = null; // Track which tab is currently active
     
     dataTabButtons.forEach(function(button) {
         button.addEventListener('click', function() {
             var targetTab = this.getAttribute('data-tab');
+            var targetTabElement = document.getElementById(targetTab);
             
-            // Remove active class from all buttons and tabs
-            dataTabButtons.forEach(function(btn) {
-                btn.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.data-tab-content').forEach(function(content) {
-                content.classList.remove('active');
-            });
-            
-            // Add active class to clicked button and corresponding tab
-            this.classList.add('active');
-            document.getElementById(targetTab).classList.add('active');
+            // If clicking the already active tab, collapse it
+            if (this.classList.contains('active')) {
+                this.classList.remove('active');
+                targetTabElement.classList.remove('active');
+                activeTab = null;
+            } else {
+                // Otherwise, switch to this tab
+                // Remove active class from all buttons and tabs
+                dataTabButtons.forEach(function(btn) {
+                    btn.classList.remove('active');
+                });
+                
+                document.querySelectorAll('.data-tab-content').forEach(function(content) {
+                    content.classList.remove('active');
+                });
+                
+                // Add active class to clicked button and corresponding tab
+                this.classList.add('active');
+                targetTabElement.classList.add('active');
+                activeTab = targetTab;
+            }
         });
     });
 });

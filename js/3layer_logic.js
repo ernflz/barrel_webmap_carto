@@ -239,8 +239,8 @@ function drawLayers(countries, lakes, wineRegions, portFeatures) {
             var dx = 0;
             var dy = 0;
             if (/Dublin/i.test(rawName)) {
-                dx = PORT_ICON_SIZE * 0.9;
-                dy = -PORT_ICON_SIZE * 0.3;
+                dx = PORT_ICON_SIZE * 0.3;
+                dy = -PORT_ICON_SIZE * 0.1;
             }
 
             // Hide if zoomed out or no coordinates
