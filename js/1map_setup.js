@@ -500,6 +500,21 @@ function zoomToCountry(countryFeature) {
     // Animate to the target rotation and scale
     rotateTo(targetCentroid, desiredScale);
 
+    // Update the checkbox for this country if it exists
+    if (countryISO && window.COUNTRY_CHECKBOXES && window.COUNTRY_CHECKBOXES[countryISO]) {
+        // Uncheck all other countries
+        Object.keys(window.COUNTRY_CHECKBOXES).forEach(function(code) {
+            window.COUNTRY_CHECKBOXES[code].checked = false;
+        });
+        // Check only this country
+        window.COUNTRY_CHECKBOXES[countryISO].checked = true;
+        
+        // Update the select all checkbox state
+        if (typeof window.UPDATE_SELECT_ALL === 'function') {
+            window.UPDATE_SELECT_ALL();
+        }
+    }
+
     // Update displayed routes (show only relevant routes for this country)
     if (relevant.length > 0) {
         updateRoutes(relevant);

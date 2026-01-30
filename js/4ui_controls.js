@@ -787,11 +787,17 @@ function buildCountriesWithRoutesList() {
             // Find the country feature to zoom to
             var countryFeature = window.COUNTRY_FEATURES_MAP && window.COUNTRY_FEATURES_MAP[countryCode];
             if (countryFeature) {
+                // Uncheck all other countries
+                Object.keys(countryCheckboxes).forEach(function(code) {
+                    countryCheckboxes[code].checked = false;
+                });
+                // Check only this country
+                checkbox.checked = true;
+                // Update the routes and UI
+                updateVisibleRoutes();
+                updateSelectAllCheckbox();
+                // Zoom to the country
                 zoomToCountry(countryFeature);
-                // Minimize sidebar after clicking
-                if (typeof minimizeSidebar === 'function') {
-                    minimizeSidebar();
-                }
             }
         });
 
